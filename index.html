@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <title>URL Shortener Microservice</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <style>
+      body {
+      background-color: lightblue;
+      }
+      h1 {
+      text-decoration: underline;
+      }
+      h3 {
+      border-left-style: solid;
+      border-left-color: green;
+      border-left-width: thick;
+      }
+      p {
+      color: green;
+      text-align: center;
+      }
+      li p {
+      color: blue;
+      text-align: left;
+      }
+      code {
+      color: Chocolate;
+      background-color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>API Basejump: Image Search Abstraction Layer Microservice</h1>
+    <section>
+      <h3>Objective:</h3>
+      <p>Build a full stack JavaScript app
+        <br>
+      that is functionally similar to this:
+        <br>
+      <a href="https://cryptic-ridge-9197.herokuapp.com/api/imagesearch/lolcats%20funny?offset=10">reference case 1</a>
+        <br>
+      <a href="https://cryptic-ridge-9197.herokuapp.com/api/latest/imagesearch/">reference case 2</a>
+        <br>
+        and
+        <br>
+      deploy it to Heroku.</p>
+      <h3>User story:</h3>
+      <ul>
+        <li>
+          <p>user can
+            <br>
+            get the image <var>URLs</var>,
+            <br>
+            <i>alt</i> text and
+            <br>
+            <b>page</b> <code>urls</code> for a set of images
+            <br>
+            relating to a given _search_ string.
+          </p>
+        </li>
+        <li>
+          <p>
+            user can
+            <br>
+            <strong>paginate</strong> through the <i>responses</i>
+            <br>
+            by adding a <mark><code>?offset=2</code></mark> <i>parameter</i> to the <var>URL</var>.
+          </p>
+        </li>
+        <li>
+          <p>
+            user can
+            <br>
+            get a <i>list</i> of the most recently submitted <i>search</i> strings.
+          </p>
+        </li>
+      </ul>
+    </section>
+    <section>
+      <h3>Usage examples (live demo):</h3>
+      <ul>
+        <li>
+          <a
+            href="https://api-image-search-microservice.herokuapp.com/">
+          https://api-image-search-microservice.herokuapp.com/</a>
+        </li>
+        <li>
+          image search results:
+          <br>
+          <a
+            href="https://api-image-search-microservice.herokuapp.com/api/imagesearch/lolcats%20funny?offset=10">
+          https://api-image-search-microservice.herokuapp.com/api/imagesearch/&lt;<i>search term</i>&gt;[&lt;<i>pagination</i>: ?offset=10&gt;]
+          </a>
+        </li>
+        <li>
+          a <i>list</i> of the most recently submitted <i>search</i> strings:
+          <br>
+          <a href="https://api-image-search-microservice.herokuapp.com/api/latest/imagesearch/">
+          https://api-image-search-microservice.herokuapp.com/api/latest/imagesearch/</a>
+        </li>
+      </ul>
+      <h3>Output samples:</h3>
+      <ul>
+        <li>
+          image search results:
+          <pre><code>[
+  {
+    "url":"https://i.ytimg.com/vi/tRzXptpC3_U/hqdefault.jpg",
+    "snippet":"funny lolcats and loldogs",
+    "thumbnail":"https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcS_dKvb6pMA0bod00g0v1Bk3YakSY7H4HYwpu268AqUK8pPiSdlUh9pEnYh",
+    "context":"https://www.youtube.com/watch?v=tRzXptpC3_U"
+  },
+  ...
+]</code>
+          </pre>
+        </li>
+        <li>
+          a <i>list</i> of the most recently submitted <i>search</i> strings:
+          <pre><code>[
+  {
+    "term":"lolcats funny",
+    "when":"2016-04-08T08:12:08.752Z"
+  },
+  ...
+  {
+    "term":"lolcats funny",
+    "when":"2016-04-08T06:12:28.546Z"
+  }
+]</code>
+          </pre>
+        </li>
+      </ul>
+    </section>
+  </body>
+</html>
