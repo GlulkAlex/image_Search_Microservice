@@ -76,19 +76,23 @@ const assert = require('assert');
 //*** core modules end ***//
 
 //*** npm modules ***//
-var express = require('express');
+const express = require('express');
 var app = express();
+// Router-level middleware works
+// in the same way as application-level middleware, except
+// it is bound to an instance of express.Router().
+var router = express.Router();
+//*** npm modules end ***//
+
 // for correct connection using .env
 // use `heroku local` or `heroku open [<url.path>]`
-const mongo = require('mongodb').MongoClient;
+//const mongo = require('mongodb').MongoClient;
 
 //*** application modules ***//
-// exports.get_Short_Link = short_Link_Generator;
-const short_Link_Gen = require('./short_link_generator.js');//.short_Link_Generator;
-//var link_Gen = short_Link_Gen;
-const host_Name_Validator = require('./host_Name_Validator.js');
-const db_Helpers = require('./db_Helpers.js');
-const response_Helpers = require('./response_Helpers.js');
+//const short_Link_Gen = require('./short_link_generator.js');//.short_Link_Generator;
+//const host_Name_Validator = require('./host_Name_Validator.js');
+//const db_Helpers = require('./db_Helpers.js');
+//const response_Helpers = require('./response_Helpers.js');
 //*** application modules end ***//
 
 // redundant here, has no practical use
@@ -128,14 +132,17 @@ var index_Template_Content_List = [
 ];
 var index_Template_Content_Str = index_Template_Content_List.join("\n");
 var getter = (
-  http
+  app
+  //http
   //https
 );
 var response_Body; 
 var source_Link = "";
 var links_Count = 0;
+var options = {};
 
 
+console.log("is_Debug_Mode:", is_Debug_Mode);
 // inline condition
 // !(true) || console.log('log'); => log
 //JSON.stringify(value[, replacer[, space]])
@@ -149,14 +156,17 @@ if (is_Debug_Mode) {
       ,'\t'
     )
   );}
+
 //var MongoClient = mongo;
 if (is_Debug_Mode) {
   //mongo.define.name == 'MongoClient'
+  /*
   if (mongo.hasOwnProperty("define")) {
     console.log("mongo.define.name:", mongo.define.name);
   } else {
     console.log("typeof mongo:", typeof(mongo));
   }
+  */
 }
 
 
@@ -183,22 +193,160 @@ if (input_args_list.length >= 3) {
 //server listen on {"address":"127.0.0.1","family":"IPv4","port":8080}
 if (is_Debug_Mode) {console.log('MONGO_URI is: %j', mongo_URI);}
 if (is_Debug_Mode) {console.log('MONGOLAB_URI is: %j', mongoLab_URI);}
+if (is_Debug_Mode) {console.log('__dirname is:', __dirname);}
 
+app
+  .get('/',
+    (req, res, next) => {
+      /*
+      res
+        .send('Hello World!')
+        .end()
+      ;*/
+      //res.end([data] [, encoding])
 
+      ///res.render('index.html');
+      //res.sendFile(path [, options] [, fn])
+      var options = {
+        root: __dirname// + '/public/'
+        ,dotfiles: 'deny'
+        ,headers: {
+            'x-timestamp': Date.now(),
+            'x-sent': true
+        }
+      };
+
+      var fileName = __dirname + "/index.html";//req.params.name;
+      /*
+      res
+        // no need for app.use(express.static('/'));
+        .sendFile(fileName
+          ,null//options
+          // If the callback function is specified and
+          // an error occurs,
+          // the callback function must
+          // explicitly `handle` the response process
+          // either by `ending` the request-response cycle, or
+          // by passing control to the `next` route.
+          ,(err) => {
+            if (err) {
+              if (is_Debug_Mode) {
+                console.log(
+                  ".sendFile(", fileName, ") error:", err);}
+              res
+                .status(err.status)
+                .end()
+              ;
+              // after end() causes
+              // Error: Can't set headers after they are sent.
+              // for next routes
+              next();
+            }
+            else {
+              if (is_Debug_Mode) {console.log('Sent:', fileName);}
+            }
+          }
+      );*/
+
+      next();
+  }
+);
+options = {
+  dotfiles: 'ignore'
+  // Enable or disable etag generation
+  ,etag: false//Default: true
+  ,extensions: ['htm', 'html']
+  // Let client errors fall-through as unhandled requests,
+  // otherwise forward a client error.
+  //,fallthrough: true
+  ,index: false
+  ,maxAge: '1d'
+  ,redirect: false
+  ,setHeaders: function (res, path, stat) {
+    res.set('x-timestamp', Date.now());
+  }
+};
+
+// ? so, Middleware work as defaults
+// when specific handlers not defined explicitly ?
+// Middleware functions are executed sequentially, therefore
+//***>>>!!! the order of middleware inclusion is important. !!!<<<***//
+//express.static(root, [options])
+app.use(express.static(__dirname + '/'));
+//app.use(express.static('public', options));
+//app.use(express.static('uploads'));
+// TypeError: root path required
+//app.use(express.static());
+
+// app.use([path,] function [, function...])
+// Mounts the specified middleware function or functions
+// at the specified path.
+// If path is not specified, it defaults to “/”.
+// Note:
+// A route will match any path that follows its path immediately with a "/".
+// For example: app.use('/apple', ...) will match
+// "/apple", "/apple/images", "/apple/images/news", and so on.
+/**/
+// you need to add a middleware function
+// at the very bottom of the stack (below all other functions)
+// to handle a 404 response
+app
+  // a middleware function with no mount path.
+  // The function is executed every time
+  // the app receives a request.
+  .use((req, res, next) => {
+    if (is_Debug_Mode) {console.log('Time:', Date.now());}
+    // GET 'http://www.example.com/admin/new'
+    // '/admin/new'
+    if (is_Debug_Mode) {console.log('Request URL(originalUrl):', req.originalUrl);}
+    if (is_Debug_Mode) {console.log("req.baseUrl:", req.baseUrl);} // '/admin'
+    if (is_Debug_Mode) {console.log("req.path:", req.path);} // '/new'
+    if (is_Debug_Mode) {console.log("req.method", req.method);}
+    if (is_Debug_Mode) {console.log("req.params:", req.params);}
+
+    //res.send('Welcome');
+    //res.render('special');
+    //res.render('index');
+    res
+      .status(404)
+      .send('Custom 404 page. Sorry cant find that!')
+      .end()
+    ;
+
+    //next();
+  }
+);
+/**/
+// define error-handling middleware in the same way as other middleware, except
+// with four arguments instead of three;
+// specifically with the signature (err, req, res, next):
+app
+  .use((err, req, res, next) => {
+    if (is_Debug_Mode) {console.error("app.use((err)=>", err.stack);}
+    res
+      .status(500)
+      .send('Something broke!')
+      .end()
+    ;
+
+    //next();
+  }
+);
 /*##########################################################################*/
 /* unit test */
 // Start a UNIX socket server 
 // listening for connections on the given path.
-http_Server
+//http_Server
+//app.listen(port, [hostname], [backlog], [callback])
+app
   .listen(
     port_Number,
     () => {
-      var address = http_Server.address();
-      var port = http_Server.address().port;
+      var address = "";//http_Server.address();
+      var port = port_Number;//http_Server.address().port;
     
-      console.log(
-        `server listening address{${address.address}}:port{${address.port}}`
-      );
+      if (is_Debug_Mode) { console.log(
+        "server listening ... address: {", address, "}, port: {", port, "}");}
       //console.log('http_Server listening on port ' + port + '...');
     }
 );
