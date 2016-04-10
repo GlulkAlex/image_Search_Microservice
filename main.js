@@ -305,6 +305,13 @@ app
       // 204 No Content
       // 302 Found
       .status(200)
+      // different Content-Type HTTP header MIME type
+      // res.type('.html');              // => 'text/html'
+      // res.type('html');               // => 'text/html'
+      // res.type('json');               // => 'application/json'
+      // res.type('application/json');   // => 'application/json'
+      // res.type('png');                // => image/png:
+      // so can not use it simultaneously
       //.send("Custom 200 page. All OK.")
       .jsonp(json_Obj)
       //.json(json_Obj)

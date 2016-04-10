@@ -90,6 +90,14 @@ var test_9_2 = function(description){
     console.log(description);
 
     // TODO extract it from GET ["url", "snippet", "context", "thumbnail"]
+    // TODO create custom parser function
+    // TODO parser must retrieve tags (start/end) for DIV
+    // TODO parser must retrieve tag's attribute ("class")
+    // TODO parser must retrieve tag's content (.innerHTML)
+    // input: data stream / chunks
+    // stream processing => ? many accumulators ?
+    // output: js object / key => value dictionary
+
     // https://www.google.ru/search?q=cute+owl&tbm=isch <- term = "cute+owl"
     //<div class="rg_meta">
     //{"cl":6,"id":"JJ6AX2fz8h4wLM:",
