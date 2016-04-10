@@ -104,6 +104,7 @@ const end_Points_List = [
   //,"/info"
 ];
 
+var server;
 var input_args_list = process.argv;
 var node_ = input_args_list[0];
 var self_file_path = input_args_list[1];
@@ -195,8 +196,13 @@ if (is_Debug_Mode) {console.log('MONGO_URI is: %j', mongo_URI);}
 if (is_Debug_Mode) {console.log('MONGOLAB_URI is: %j', mongoLab_URI);}
 if (is_Debug_Mode) {console.log('__dirname is:', __dirname);}
 
+// best practice is
+// to to turn off the header with the app.disable() method:
+app.disable('x-powered-by');
+
 app
-  .get('/',
+  .route('/')
+  .get(
     (req, res, next) => {
       /*
       res
@@ -217,7 +223,8 @@ app
       };
 
       var fileName = __dirname + "/index.html";//req.params.name;
-      /*
+      /**/
+      // async (? Promise ?)
       res
         // no need for app.use(express.static('/'));
         .sendFile(fileName
@@ -235,22 +242,100 @@ app
                   ".sendFile(", fileName, ") error:", err);}
               res
                 .status(err.status)
+                // send headers
                 .end()
               ;
               // after end() causes
               // Error: Can't set headers after they are sent.
               // for next routes
-              next();
+              //next();
             }
             else {
               if (is_Debug_Mode) {console.log('Sent:', fileName);}
+              res
+                // send headers
+                .end();
+
+              // use something one: .end() or next() -> not both simultaneously
+              //next();
             }
           }
-      );*/
+      )
+      // TypeError: Cannot read property 'then' of undefined
+      // ? so warper needed ?
+      //.then(() => {if (is_Debug_Mode) {console.log(".sendFile() is \"thenable\"");}})
+      //.catch((err) => {if (is_Debug_Mode) {console.log(".sendFile().catch(err):", err.message);}})
+      ;/**/
 
-      next();
+      // if active fires / emits before .sendFile() is complete
+      // and screw it in the process -> Error: Request aborted
+      //next();
   }
 );
+
+app
+  // "/api/imagesearch/:term/" -> req.params.keyName => term
+  // req.params.term => "owl%20funny?offset=10"
+  .route("/api/imagesearch/:term/")
+  .get(
+    (req, res, next) => {
+    // for example.com/users?sort=desc -> req.path => "/users"
+    // for route /user/:name
+    // GET /user/tj -> req.params.name => "tj"
+    // GET /search?q=tobi+ferret -> req.query.q => "tobi ferret"
+    // GET /lolcats%20funny?offset=10
+    var offset = 0;
+    var json_Obj = {};
+
+    if (req.query.hasOwnProperty("offset")) {
+      offset = req.query.offset;
+    }
+    json_Obj = {
+      "error": false//true//'message'
+      ,"status": 200// OK
+      ,"message": "imagesearch requested (req.path): " + req.path +
+        ", req.params.term:" + req.params.term +
+        ", req.query:" + JSON.stringify(req.query) +
+        ", offset:" + offset
+    };
+
+    res
+      // 202 Accepted
+      // 203 Non-Authoritative Information
+      // 204 No Content
+      // 302 Found
+      .status(200)
+      //.send("Custom 200 page. All OK.")
+      .jsonp(json_Obj)
+      //.json(json_Obj)
+    ;
+  }
+);
+
+app
+  .route("/api/latest/imagesearch/")
+  .get(
+    (req, res, next) => {
+    var json_Obj = {
+      "error": false//true//'message'
+      ,"status": 200// OK
+      ,"message": "latest imagesearch requested"
+    };
+
+    res
+      // 202 Accepted
+      // 203 Non-Authoritative Information
+      // 204 No Content
+      // 302 Found
+      .status(200)
+      //.send("Custom 200 page. All OK.")
+      .jsonp(json_Obj)
+      //.json(json_Obj)
+    ;
+  }
+)
+;
+
 options = {
   dotfiles: 'ignore'
   // Enable or disable etag generation
@@ -272,7 +357,7 @@ options = {
 // Middleware functions are executed sequentially, therefore
 //***>>>!!! the order of middleware inclusion is important. !!!<<<***//
 //express.static(root, [options])
-app.use(express.static(__dirname + '/'));
+//app.use(express.static(__dirname + '/'));
 //app.use(express.static('public', options));
 //app.use(express.static('uploads'));
 // TypeError: root path required
@@ -295,6 +380,12 @@ app
   // The function is executed every time
   // the app receives a request.
   .use((req, res, next) => {
+    var json_Obj = {
+      "error": true//'message'
+      ,"status": 404
+      ,"message": "Custom 404 page. Sorry cant find that!"
+    };
+
     if (is_Debug_Mode) {console.log('Time:', Date.now());}
     // GET 'http://www.example.com/admin/new'
     // '/admin/new'
@@ -309,7 +400,8 @@ app
     //res.render('index');
     res
       .status(404)
-      .send('Custom 404 page. Sorry cant find that!')
+      .jsonp(json_Obj)
+      //.send("Custom 404 page. Sorry cant find that!")
       .end()
     ;
 
@@ -323,9 +415,17 @@ app
 app
   .use((err, req, res, next) => {
     if (is_Debug_Mode) {console.error("app.use((err)=>", err.stack);}
+    var json_Obj = {
+      "error": true//'message'
+      ,"status": 500
+      ,"message": "Custom 500 page. Something broke!"
+    };
+
     res
       .status(500)
-      .send('Something broke!')
+      //.send("Custom 500 page. Something broke!")
+      .jsonp(json_Obj)
+      .json(json_Obj)
       .end()
     ;
 
@@ -338,15 +438,16 @@ app
 // listening for connections on the given path.
 //http_Server
 //app.listen(port, [hostname], [backlog], [callback])
-app
+server = app
   .listen(
     port_Number,
     () => {
-      var address = "";//http_Server.address();
-      var port = port_Number;//http_Server.address().port;
+      var address = server.address();
+      var port = server.address().port;
     
       if (is_Debug_Mode) { console.log(
-        "server listening ... address: {", address, "}, port: {", port, "}");}
+        //"server listening ... address: {", address, "}, port: {", port, "}");}
+        "server listening ...", address);}
       //console.log('http_Server listening on port ' + port + '...');
     }
 );
@@ -354,3 +455,33 @@ app
 // provide both HTTP and HTTPS versions of 'app' with the same code base
 //http.createServer(app).listen(80);
 //https.createServer(options, app).listen(443);
+server
+  .on('error',
+    (err) => {
+
+      if (err.code == 'EADDRINUSE') {
+        console.log('Address in use, retrying...');
+
+        setTimeout(
+          () => {
+            server.close();
+            server
+            .listen(
+              //PORT,
+              //HOST
+              //path.join(process.cwd()),
+              function () {
+
+                var port = server.address().port;
+
+                console.log("App now running on port:", port);
+                console
+                .log('express_Server listening on port ' + port + '...');
+              }
+            );
+          },
+          1000
+        );
+      }
+    }
+);
