@@ -89,6 +89,22 @@ var test_9_2 = function(description){
     "use strict";
     console.log(description);
 
+    // TODO extract it from GET ["url", "snippet", "context", "thumbnail"]
+    // https://www.google.ru/search?q=cute+owl&tbm=isch <- term = "cute+owl"
+    //<div class="rg_meta">
+    //{"cl":6,"id":"JJ6AX2fz8h4wLM:",
+    //"isu":"wallpaperswide.com","itg":false,"ity":"jpg",
+    //"oh":720, <- image height
+    //"ou":"http://wallpaperswide.com/download/cute_owl-wallpaper-1152x720.jpg", <- "url"
+    //"ow":1152, <- image width
+    //"pt":"Cute Owl HD desktop wallpaper : Widescreen : High Definition ...", <- "snippet"
+    //"rid":"2kOGT5u3dPuyQM",
+    //"ru":"http://wallpaperswide.com/cute_owl-wallpapers.html", <- "context"
+    //"s":"Wide 16:10","th":177,
+    //"tu":"https://encrypted-tbn0.gstatic.com/images?q\u003dtbn:ANd9GcRmavtLjp8djM6VjoHB8xr8WOVp8rlsO1Puk4gClrBTZkHR99U8",
+    // <- "thumbnail"
+    //"tw":284}
+    //</div>
     var results = [];
     var result;
     var getter = require('http');
