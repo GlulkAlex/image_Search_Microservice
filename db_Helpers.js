@@ -227,9 +227,10 @@ function clear_Links(
 * - if not exist create one explicitly
 */
 function create_Index(
-  //mongoLab_URI//:str
-  //,collection_Name//:str
-  collection//: obj [collection]
+  mongo_Client//: MongoClient obj <- explicit
+  ,mongoLab_URI//:str
+  ,collection_Name//:str
+  //collection//: obj [collection]
   // index
   ,field_Name//:str
   ,is_Debug_Mode//: bool <- optional
@@ -241,25 +242,84 @@ function create_Index(
   //  collection_Name ? collection_Name : 'tests'//:str
   //);
   if (
-    collection && field_Name
+    mongo_Client &&
+    mongoLab_URI &&
+    //collection &&
+    collection_Name &&
+    field_Name
+    && typeof(mongoLab_URI) == 'string' && mongoLab_URI.length > 0
+    && typeof(collection_Name) == 'string' && collection_Name.length > 0
     && typeof(field_Name) == 'string' && field_Name.length > 0
   ) {
-    if (is_Debug_Mode) {console.log("creating index for", field_Name, "field");}
+    if (is_Debug_Mode) {console.log("creating index for", field_Name, "field in", collection_Name);}
 
-    var db = collection.s.db;
     var field_Spec = {};
-
     // value of 1 specifies an index that orders items in `ascending` order.
     // A value of -1 specifies an index that orders items in `descending` order.
-    field_Spec[field_Name] = 1;
+    var index_Sort_Order = 1;
 
-    // Grab a collection with a callback in safe mode, ensuring it exists (should fail if it is not created)
-    //db.collection('test_correctly_access_collections_with_promise', {strict:true}, function(err, col3) {}
-      // Create the collection
-      //db.createCollection('test_correctly_access_collections_with_promise').then(function(err, result) {}
+    field_Spec[field_Name] = index_Sort_Order;
+    //var db = collection.s.db;
+    MongoClient
+      .connect(mongoLab_URI)
+      .then((db) => {
+        if (is_Debug_Mode) {console.log("Checking if exist collection:", collection_Name, "...");}
+        // Grab a collection with a callback in `safe mode`,
+        // ensuring it exists (should fail if it is not created)
+        db
+          .collection(collection_Name
+            ,{"strict": true}//, function(err, col3) {}
+          )
+          .then((collection) => {
+              if (is_Debug_Mode) {console.log("collection:", collection_Name, "already exist");}
+              //collection.indexExists(indexes, callback) => {Promise}
+              collection
+                .indexExists(field_Name + "_" + index_Sort_Order)
+                .then((result) => {
+                  if (is_Debug_Mode) {console.log("collection.indexExists(result):", result);}
+                })
+                .catch((err) => {
+                })
+              ;
+              //return Promise.resolve(collection);
+            }
+          )
+          .catch((err) => {
+            if (is_Debug_Mode) {console.log("db.collection(", collection_Name, ").catch(error):", err.stack);}
+            //createCollection(name, options, callback) => {Promise}
+            // Create the collection
+            //return
+            db
+              .createCollection(collection_Name)
+              .then((collection) => {
+                if (is_Debug_Mode) {console.log("collection:", collection_Name, "created");}
+                //db.createIndex(name, fieldOrSpec, options, callback) => {Promise}
+                db
+                  .createIndex(collection_Name
+                    ,field_Spec
+                  )
+                  .then((result) => {
+                    if (is_Debug_Mode) {console.log("db.createIndex(result):", result);}
+                  })
+                  .catch((err) => {
+                    if (is_Debug_Mode) {
+                      console.log("db.createIndex(", collection_Name, field_Name, ").catch(error):", err.stack);}
+                  })
+                ;
+              })
+              .catch((err) => {
+                if (is_Debug_Mode) {
+                  console.log("db.createCollection(", collection_Name, ").catch(error):", err.stack);}
+                }
+              )
+            ;
+          })
+        ;
+      })
+    ;
 
-    //collection.indexExists(indexes, callback) => {Promise}
-    //db.createIndex(name, fieldOrSpec, options, callback) => {Promise}
+
+
     return Promise
       .resolve(
         // Create an index on the a field
