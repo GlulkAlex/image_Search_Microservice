@@ -226,6 +226,7 @@ function clear_Links(
 * - check for collection time_Stamp index existence
 * - if not exist create one explicitly
 */
+/* jshint esversion: 6, laxcomma: true */
 function create_Index(
   mongo_Client//: MongoClient obj <- explicit
   ,mongoLab_URI//:str
@@ -246,10 +247,10 @@ function create_Index(
     mongoLab_URI &&
     //collection &&
     collection_Name &&
-    field_Name
-    && typeof(mongoLab_URI) == 'string' && mongoLab_URI.length > 0
-    && typeof(collection_Name) == 'string' && collection_Name.length > 0
-    && typeof(field_Name) == 'string' && field_Name.length > 0
+    field_Name &&
+    typeof(mongoLab_URI) == 'string' && mongoLab_URI.length > 0 &&
+    typeof(collection_Name) == 'string' && collection_Name.length > 0 &&
+    typeof(field_Name) == 'string' && field_Name.length > 0
   ) {
     if (is_Debug_Mode) {console.log("creating index for", field_Name, "field in", collection_Name);}
 
@@ -260,16 +261,37 @@ function create_Index(
 
     field_Spec[field_Name] = index_Sort_Order;
     //var db = collection.s.db;
-    MongoClient
+    mongo_Client
       .connect(mongoLab_URI)
       .then((db) => {
+        //>>> pending here
         if (is_Debug_Mode) {console.log("Checking if exist collection:", collection_Name, "...");}
         // Grab a collection with a callback in `safe mode`,
         // ensuring it exists (should fail if it is not created)
-        db
+        var collection_Promise = db
           .collection(collection_Name
-            ,{"strict": true}//, function(err, col3) {}
+            ,{"strict": true}
+            ,(err, collection) => {
+              if (is_Debug_Mode) {console.log("typeof(err):", typeof(err));}
+              // err.toString(): MongoError: Collection image_search_results does not exist. Currently in strict mode.
+              if (is_Debug_Mode) {console.log("err.toString():", err.toString());}
+              // err.code: undefined
+              //if (is_Debug_Mode) {console.log("err.code:", err.code);}
+              if (is_Debug_Mode) {console.log("typeof(collection):", typeof(collection));}
+              //if (is_Debug_Mode) {console.log("collection.toString():", collection.toString());}
+              if (is_Debug_Mode) {console.log("String(collection):", String(collection));}
+              if (err) {if (is_Debug_Mode) {console.log("closing db ...");} db.close(); return err;}
+              if (is_Debug_Mode) {console.log("collection.name:", collection.name);}
+            }
           )
+        ;
+        if (is_Debug_Mode) {console.log("typeof(collection_Promise):", typeof(collection_Promise));}
+        if (is_Debug_Mode) {
+          console.log("is collection_Promise instanceof Promise:", collection_Promise instanceof Promise);}
+        if (is_Debug_Mode) {
+          console.log("collection_Promise.hasOwnProperty(\"then\"):", collection_Promise.hasOwnProperty("then"));}
+
+        collection_Promise
           .then((collection) => {
               if (is_Debug_Mode) {console.log("collection:", collection_Name, "already exist");}
               //collection.indexExists(indexes, callback) => {Promise}
@@ -277,15 +299,53 @@ function create_Index(
                 .indexExists(field_Name + "_" + index_Sort_Order)
                 .then((result) => {
                   if (is_Debug_Mode) {console.log("collection.indexExists(result):", result);}
+
+                  if (db) {if (is_Debug_Mode) {console.log("closing db");}db.close();}
                 })
                 .catch((err) => {
+                  if (is_Debug_Mode) {
+                    console.log(
+                      "collection.indexExists(", field_Name + "_" + index_Sort_Order, ").catch(error):",
+                      err.message);}
+                  if (is_Debug_Mode) {console.log(err.stack);}
+                  // Create an index on the a field
+                  collection
+                    .createIndex(
+                      field_Spec
+                      //{field_Name: 1}// <- obj literal failed, `field_Name` was not substituted by its value
+                      //"{" + field_Name + ": 1}"//: str <- wrong syntax
+                      //field_Name//: str
+                      ,{
+                        //"unique": true
+                        "background": true
+                        ,"w": 1
+                      }
+                    )
+                    .then((index_Name) => {
+                        if (is_Debug_Mode) {console.log("indexName:", index_Name, "for", field_Name, "field created");}
+
+                        if (db) {if (is_Debug_Mode) {console.log("closing db");}db.close();}
+
+                        //return collection;// ? for further .then() ?
+                        //return indexName;
+                      }
+                    ).catch((err) => {
+                        if (is_Debug_Mode) {console.log("collection.createIndex( err:", err.message);}
+                        if (is_Debug_Mode) {console.log(err.stack);}
+
+                        if (db) {if (is_Debug_Mode) {console.log("closing db");}db.close();}
+                        //return err;
+                      }
+                    )
+                  ;
                 })
               ;
               //return Promise.resolve(collection);
             }
           )
           .catch((err) => {
-            if (is_Debug_Mode) {console.log("db.collection(", collection_Name, ").catch(error):", err.stack);}
+            if (is_Debug_Mode) {console.log("db.collection(", collection_Name, ").catch(error):", err.message);}
+            if (is_Debug_Mode) {console.log(err.stack);}
             //createCollection(name, options, callback) => {Promise}
             // Create the collection
             //return
@@ -300,16 +360,20 @@ function create_Index(
                   )
                   .then((result) => {
                     if (is_Debug_Mode) {console.log("db.createIndex(result):", result);}
+                    if (db) { if (is_Debug_Mode) {console.log("closing db");} db.close();}
                   })
                   .catch((err) => {
                     if (is_Debug_Mode) {
-                      console.log("db.createIndex(", collection_Name, field_Name, ").catch(error):", err.stack);}
+                      console.log("db.createIndex(", collection_Name, field_Name, ").catch(error):", err.message);}
+                    if (is_Debug_Mode) {console.log(err.stack);}
                   })
                 ;
               })
               .catch((err) => {
                 if (is_Debug_Mode) {
-                  console.log("db.createCollection(", collection_Name, ").catch(error):", err.stack);}
+                  console.log("db.createCollection(", collection_Name, ").catch(error):", err.message);}
+                if (is_Debug_Mode) {console.log(err.stack);}
+                if (db) { if (is_Debug_Mode) {console.log("closing db");} db.close();}
                 }
               )
             ;
@@ -319,53 +383,9 @@ function create_Index(
     ;
 
 
-
-    return Promise
-      .resolve(
-        // Create an index on the a field
-        collection
-          // TypeError: collection.createIndex is not a function
-          .createIndex(
-            field_Spec
-            //{field_Name: 1}// <- obj literal failed, `field_Name` was not substituted by its value
-            //"{" + field_Name + ": 1}"//: str <- wrong syntax
-            //field_Name//: str
-            , {
-              //"unique": true
-              "background": true
-              ,"w": 1
-            }
-          )
-          .then((indexName) => {
-              if (is_Debug_Mode) {console.log("indexName:", indexName, "for", field_Name, "field created");}
-
-              if (
-                db
-                //collection.s.db
-              ) {
-                //console.log("closing db");
-                //db.close();
-              }
-
-              return collection;// ? for further .then() ?
-              //return indexName;
-            }
-          ).catch((err) => {
-              console.log("connection err:", err.code);
-              console.log(err.stack)
-              if (
-                db
-                //collection.s.db
-              ) {
-                //console.log("closing db");
-                //db.close();
-              }
-              return err;
-            }
-        )
-    );
+    //return Promise.resolve();
   } else {
-    if (is_Debug_Mode) {console.log("collection or field_Name undefined ?:", collection, field_Name);}
+    if (is_Debug_Mode) {console.log("one of input parameters is undefined ?:", collection_Name, field_Name);}
   }
 };
 
@@ -780,7 +800,7 @@ function find_Recent_Docs(
 /*##########################################################################*/
 exports.clear_Links = clear_Links;
 exports.get_Collection = get_Collection;
-exports.create_Unique_Index = create_Unique_Index;
+exports.create_Index = create_Index;
 exports.add_Docs = add_Docs;
 exports.insert_Link_To_DB = insert_Link_To_DB;
 exports.find_Recent_Docs = find_Recent_Docs;

@@ -1,13 +1,4 @@
 "use strict";
-/*** Node.js modules ***/
-// a core module
-const assert = require('assert');
-
-// npm module
-//var
-//const MongoClient = require('mongodb').MongoClient;
-/*** Node.js modules end ***/
-
 /*** config ***/
 // If X.json is a file, parse X.json to a JavaScript Object.
 //const
@@ -38,11 +29,27 @@ const mongoLab_URI = (
   process.argv[3] ||
   "mongodb://localhost:27017/data_uri"
 );
+const is_Debug_Mode = (
+  process.env.IS_DEBUG ||
+  env.DEBUG_MODE.value ||
+  process.argv[2]
+  //true
+  //false
+);
 //*** config end ***//
+
+/*** Node.js modules ***/
+// a core module
+const assert = require('assert');
+
+// npm module
+//var
+const mongo_Client = require('mongodb').MongoClient;
+/*** Node.js modules end ***/
 
 //*** application modules ***//
 //const host_Name_Validator = require('./host_Name_Validator.js');
-//const db_Helpers = require('./db_Helpers.js');
+const db_Helpers = require('./db_Helpers.js');
 //const comparator = require('./comparator.js');
 //*** application modules end ***//
 
@@ -164,7 +171,7 @@ var test_1_0 = function(description){
 // res.type('.html');              // => 'text/html'
 // res.type('html');               // => 'text/html'
 // res.get('Content-Type'); => "text/plain"
-("https://www.google.ru/search?q=cute+owl&tbm=isch", 400)
+//("https://www.google.ru/search?q=cute+owl&tbm=isch", 400)
 // res.type('json');               // => 'application/json'
 // res.type('application/json');   // => 'application/json'
 ;
@@ -272,9 +279,10 @@ var test_2_0 = function(description){
   "use strict";
   // curred
   return function(
-    url//:str
-    ,expected_Result//:list of bool
-  )/* => list of bool */ {
+    collection_Name//:str
+    ,field_Name//:str
+    //,expected_Result//:list of bool
+  ) {// => ? list of bool ?
     "use strict";
     console.log(description);
 
@@ -283,11 +291,21 @@ var test_2_0 = function(description){
     //var getter = require('https');
 
     return Promise.resolve(
+      db_Helpers
+        .create_Index(
+          mongo_Client//: MongoClient obj <- explicit
+          ,mongoLab_URI//:str
+          ,collection_Name//:str
+          //collection//: obj [collection]
+          // index
+          ,field_Name//:str
+          ,is_Debug_Mode//: bool <- optional
+        )
     )
     ;
   };
 }("test 2.0: must create collection if non-exist & specific index in it if non-exist")
-//("https://www.google.ru/search?q=cute+owl&tbm=isch", 'text/html')
+("image_search_results", "when")
 ;
 /*** tests end ***/
 
