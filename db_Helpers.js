@@ -512,7 +512,7 @@ function insert_Link_To_DB(
               /* finally */
               if (db) {
                 db.close();
-                if (is_Debug_Mode) {console.log(`Close db after link insert `);}
+                if (is_Debug_Mode) {console.log("Close db after link insert(ion/ed)");}
               }
 
               return Promise.resolve(result.result.ok);

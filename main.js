@@ -82,6 +82,8 @@ var app = express();
 // in the same way as application-level middleware, except
 // it is bound to an instance of express.Router().
 var router = express.Router();
+
+const mongo_Client = require('mongodb').MongoClient;
 //*** npm modules end ***//
 
 // for correct connection using .env
@@ -286,10 +288,93 @@ app
     // GET /lolcats%20funny?offset=10
     var offset = 0;
     var json_Obj = {};
+    var document_Obj = {};
 
+    document_Obj = {
+      "term": req.params.term//JSON.stringify(document_Obj)
+      // NOTE
+      // The BSON `timestamp` type is for internal MongoDB use.
+      /*
+      Date
+      BSON Date is
+      a 64-bit integer
+      that represents the number of milliseconds since the Unix epoch (Jan 1, 1970).
+      This results in
+      a representable date range
+      of about 290 million years into the past and future.
+      The official BSON specification refers to the BSON Date type as
+      the UTC datetime.
+      Changed in version 2.0: BSON Date type is signed.
+      Negative values represent dates before 1970.
+      */
+      // Using new Date(), creates a new date object with the current date and time
+      ,"when": new Date()
+        //"2016-04-08T08:12:08.752Z"
+        // The T in the date string, between the date and time, indicates UTC time.
+        // UTC (Universal Time Coordinated) is the same as GMT (Greenwich Mean Time).
+    };
     if (req.query.hasOwnProperty("offset")) {
       offset = req.query.offset;
     }
+
+    // async block //
+    var connection = mongo_Client.connect(mongoLab_URI);
+
+    connection
+      .then((db) => {
+          var collection = db.collection(collection_Name);
+
+          //return db;
+          return {"db": db, "collection": collection};
+        }
+      )
+      .then((result_Obj) => {
+          var db = result_Obj.db;
+          var collection = result_Obj.collection;
+
+          //return db;
+          return Promise
+            .resolve({
+              "db": db
+              ,"collection": collection
+              ,"insert_Result": collection
+                .insertOne(
+                  document_Obj
+                  //JSON.stringify(document_Obj)
+                ).then((insert_Result) => {return insert_Result;})
+          })
+          ;
+        }
+      )
+      .then((insert_Result_Obj) => {//.result.n
+          //console.log(JSON.stringify(document_Obj));
+          //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
+          if (is_Debug_Mode) {console.log("result.result.n:", insert_Result_Obj.insert_Result.result.n);}
+          //console.log('result.result: %j', result.result);
+
+          /* finally */
+          if (insert_Result_Obj.db) {
+            insert_Result_Obj.db.close();
+            if (is_Debug_Mode) {console.log("Close db after link insert(ion/ed)");}
+          }
+
+          //return Promise.resolve(result.result.ok);
+        }
+      )
+      .catch((err) => {
+          if (is_Debug_Mode) {console.log("collection.insertOne() error:", err.stack);}
+          /* finally */
+          /*if (db) {
+            db.close();
+            if (is_Debug_Mode) {console.log("Close db after insertOne().catch()");}
+          }*/
+
+          //return Promise.reject(err);
+        }
+      )
+    ;
+    // async block end //
+
     json_Obj = {
       "error": false//true//'message'
       ,"status": 200// OK
