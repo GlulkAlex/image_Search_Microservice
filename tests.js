@@ -47,26 +47,13 @@ const mongoLab_URI = (
 //*** application modules end ***//
 
 //*** helpers ***//
-function make_Links_Documents(
-  size//:int
-)/* => list of obj */ {
+function helper(
+  params//:int
+) {// => list of obj
   "use strict";
 
   var result;
   var results = [];
-  var loop_Counter = 0;
-
-  for (;loop_Counter < size;loop_Counter++){
-    //{"original_url":"original_Link_1","short_url":""}
-    // ??? WTF ???
-    // DONE : test short_Link_Generator for ''
-    results.push(
-      {
-        "original_url": "original_Link_" + loop_Counter,
-        "short_url": link_Gen.get_Short_Link(loop_Counter)
-      }
-    );
-  }
 
   return results;
 }
@@ -79,7 +66,7 @@ var actual_Results;
 var expected_Results;
 // case 1:
 /* jshint esversion: 6, laxcomma: true */
-var test_9_2 = function(description){
+var test_1_0 = function(description){
   "use strict";
   // curred
   return function(
@@ -127,10 +114,18 @@ var test_9_2 = function(description){
         .get(
           url,
           (response) => {
+            var content_Type;
+
             console.log("Got response:", response.statusCode);
+
+            if (response.hasOwnProperty("getHeader")) {
+              content_Type = response.getHeader('content-type');
+            } else {
+              content_Type = response.headers['content-type'];
+            }
+
+            console.log("content_Type:", content_Type);
             console.log("headers: ", response.headers);
-            var contentType = (
-              response.getHeader ? response.getHeader('content-type') : response.headers['content-type']);
 
             //readable
             //response.resume();
@@ -158,26 +153,23 @@ var test_9_2 = function(description){
 
             //next();
 
-            return contentType;
+            return content_Type;
           }
         )
         .on('error', (err) => {console.log("url getter error:", err.stack);}
       )
     );
   };
-}("test 9.2: must receive correct / expected 'statusCode' from response to remote server")
+}("test 1.0: must receive correct / expected 'statusCode' from response to remote server")
 // res.type('.html');              // => 'text/html'
 // res.type('html');               // => 'text/html'
 // res.get('Content-Type'); => "text/plain"
-//("https://soundcloud.com/", 400)
+("https://www.google.ru/search?q=cute+owl&tbm=isch", 400)
 // res.type('json');               // => 'application/json'
 // res.type('application/json');   // => 'application/json'
-//("https://api-url-shortener-microservice.herokuapp.com/lInK", "application/json")
-//("https://api-url-shortener-microservice.herokuapp.com/new/http://expressjs.com/en/4x/api.html#res.type"
-//, "application/json")
 ;
 
-var test_9_1 = function(description){
+var test_1_1 = function(description){
   "use strict";
   // curred
   return function(
@@ -221,10 +213,20 @@ var test_9_1 = function(description){
         .get(
           url,
           (response) => {
-            console.log(`Got response: ${response.statusCode}`);
-            console.log('headers: ', response.headers);
-            var contentType = (
-              response.getHeader ? response.getHeader('content-type') : response.headers['content-type']);
+            var content_Type;
+
+            console.log("Got response:", response.statusCode);
+
+            //content_Type.split(";")[0]
+            if (response.hasOwnProperty("getHeader")) {
+              content_Type = response.getHeader('content-type');
+            } else {
+              content_Type = response.headers['content-type'];
+            }
+            content_Type = content_Type.split(";")[0];
+
+            console.log("content_Type:", content_Type);
+            console.log("headers: ", response.headers);
 
             //readable
             //response.resume();
@@ -232,6 +234,7 @@ var test_9_1 = function(description){
             // rather than standard `Buffer` `objects`
             response.setEncoding('utf8');
             response
+              // for big page => only 1st chunk will be returned
               .once(
                 'data',
                 (data) => {
@@ -243,28 +246,26 @@ var test_9_1 = function(description){
             //response.body ? console.log("data:", data) : console.log("response.body:", response.body);
             //console.log("response.body:", response.body);
 
-            assert(contentType == expected_Result);
-            assert.equal(contentType, expected_Result);
+            //'content-type': 'text/html; charset=windows-1251',
+            //assert(content_Type == expected_Result);
+            assert.equal(content_Type, expected_Result);
             //assert.deepEqual(results, expected_Results);
             //next();
 
-            return contentType;
+            return content_Type;
           }
         )
         .on('error', (err) => {console.log("url getter error:", err.stack);}
       )
     );
   };
-}("test 9.1: must receive correct / expected 'content-type' from response to remote server")
+}("test 1.1: must receive correct / expected 'content-type' from response to remote server")
 // res.type('.html');              // => 'text/html'
 // res.type('html');               // => 'text/html'
 // res.get('Content-Type'); => "text/plain"
-//("https://api-url-shortener-microservice.herokuapp.com/", "text/html")
+("https://www.google.ru/search?q=cute+owl&tbm=isch", 'text/html')
 // res.type('json');               // => 'application/json'
 // res.type('application/json');   // => 'application/json'
-//("https://api-url-shortener-microservice.herokuapp.com/lInK", "application/json")
-//("https://api-url-shortener-microservice.herokuapp.com/new/http://expressjs.com/en/4x/api.html#res.type"
-//, "application/json")
 ;
 /*** tests end ***/
 
