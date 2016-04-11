@@ -226,12 +226,13 @@ function clear_Links(
 * - check for collection time_Stamp index existence
 * - if not exist create one explicitly
 */
-function create_Unique_Index(
+function create_Index(
   //mongoLab_URI//:str
   //,collection_Name//:str
   collection//: obj [collection]
   // index
   ,field_Name//:str
+  ,is_Debug_Mode//: bool <- optional
 ) {//: => Promise
   "use strict";
 
@@ -243,14 +244,24 @@ function create_Unique_Index(
     collection && field_Name
     && typeof(field_Name) == 'string' && field_Name.length > 0
   ) {
-    console.log("creating index for", field_Name, "field");
+    if (is_Debug_Mode) {console.log("creating index for", field_Name, "field");}
+
     var db = collection.s.db;
     var field_Spec = {};
+
+    // value of 1 specifies an index that orders items in `ascending` order.
+    // A value of -1 specifies an index that orders items in `descending` order.
     field_Spec[field_Name] = 1;
 
+    // Grab a collection with a callback in safe mode, ensuring it exists (should fail if it is not created)
+    //db.collection('test_correctly_access_collections_with_promise', {strict:true}, function(err, col3) {}
+      // Create the collection
+      //db.createCollection('test_correctly_access_collections_with_promise').then(function(err, result) {}
+
+    //collection.indexExists(indexes, callback) => {Promise}
+    //db.createIndex(name, fieldOrSpec, options, callback) => {Promise}
     return Promise
       .resolve(
-        //clear.then err: ReferenceError: collection is not defined
         // Create an index on the a field
         collection
           // TypeError: collection.createIndex is not a function
@@ -259,10 +270,15 @@ function create_Unique_Index(
             //{field_Name: 1}// <- obj literal failed, `field_Name` was not substituted by its value
             //"{" + field_Name + ": 1}"//: str <- wrong syntax
             //field_Name//: str
-            , {"unique": true, "background": true, "w": 1}
+            , {
+              //"unique": true
+              "background": true
+              ,"w": 1
+            }
           )
           .then((indexName) => {
-              console.log("indexName:", indexName, "for", field_Name, "field created");
+              if (is_Debug_Mode) {console.log("indexName:", indexName, "for", field_Name, "field created");}
+
               if (
                 db
                 //collection.s.db
@@ -289,7 +305,7 @@ function create_Unique_Index(
         )
     );
   } else {
-    console.log("collection or field_Name undefined ?:", collection, field_Name);
+    if (is_Debug_Mode) {console.log("collection or field_Name undefined ?:", collection, field_Name);}
   }
 };
 

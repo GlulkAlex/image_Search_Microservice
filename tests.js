@@ -263,9 +263,31 @@ var test_1_1 = function(description){
 // res.type('.html');              // => 'text/html'
 // res.type('html');               // => 'text/html'
 // res.get('Content-Type'); => "text/plain"
-("https://www.google.ru/search?q=cute+owl&tbm=isch", 'text/html')
+//("https://www.google.ru/search?q=cute+owl&tbm=isch", 'text/html')
 // res.type('json');               // => 'application/json'
 // res.type('application/json');   // => 'application/json'
+;
+
+var test_2_0 = function(description){
+  "use strict";
+  // curred
+  return function(
+    url//:str
+    ,expected_Result//:list of bool
+  )/* => list of bool */ {
+    "use strict";
+    console.log(description);
+
+    var results = [];
+    var result;
+    //var getter = require('https');
+
+    return Promise.resolve(
+    )
+    ;
+  };
+}("test 2.0: must create collection if non-exist & specific index in it if non-exist")
+//("https://www.google.ru/search?q=cute+owl&tbm=isch", 'text/html')
 ;
 /*** tests end ***/
 
