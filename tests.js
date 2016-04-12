@@ -275,6 +275,7 @@ var test_1_1 = function(description){
 // res.type('application/json');   // => 'application/json'
 ;
 
+/* somehow it works */
 var test_2_0 = function(description){
   "use strict";
   // curred
@@ -305,7 +306,7 @@ var test_2_0 = function(description){
     ;
   };
 }("test 2.0: must create collection if non-exist & specific index in it if non-exist")
-("image_search_results", "when")
+//("image_search_results", "when")
 ;
 /*** tests end ***/
 

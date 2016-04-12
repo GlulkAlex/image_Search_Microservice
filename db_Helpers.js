@@ -227,6 +227,7 @@ function clear_Links(
 * - if not exist create one explicitly
 */
 /* jshint esversion: 6, laxcomma: true */
+/* somehow it works */
 function create_Index(
   mongo_Client//: MongoClient obj <- explicit
   ,mongoLab_URI//:str
@@ -257,7 +258,9 @@ function create_Index(
     var field_Spec = {};
     // value of 1 specifies an index that orders items in `ascending` order.
     // A value of -1 specifies an index that orders items in `descending` order.
-    var index_Sort_Order = 1;
+    //>>> for return docs with latest date
+    //>>> order must be `descending` -> latest first (not oldest)
+    var index_Sort_Order = -1;
 
     field_Spec[field_Name] = index_Sort_Order;
     //var db = collection.s.db;
@@ -268,26 +271,47 @@ function create_Index(
         if (is_Debug_Mode) {console.log("Checking if exist collection:", collection_Name, "...");}
         // Grab a collection with a callback in `safe mode`,
         // ensuring it exists (should fail if it is not created)
-        var collection_Promise = db
-          .collection(collection_Name
-            ,{"strict": true}
-            ,(err, collection) => {
-              if (is_Debug_Mode) {console.log("typeof(err):", typeof(err));}
-              // err.toString(): MongoError: Collection image_search_results does not exist. Currently in strict mode.
-              if (is_Debug_Mode) {console.log("err.toString():", err.toString());}
-              // err.code: undefined
-              //if (is_Debug_Mode) {console.log("err.code:", err.code);}
-              if (is_Debug_Mode) {console.log("typeof(collection):", typeof(collection));}
-              //if (is_Debug_Mode) {console.log("collection.toString():", collection.toString());}
-              if (is_Debug_Mode) {console.log("String(collection):", String(collection));}
-              if (err) {if (is_Debug_Mode) {console.log("closing db ...");} db.close(); return err;}
-              if (is_Debug_Mode) {console.log("collection.name:", collection.name);}
-            }
+        var collection_Promise = Promise
+          .resolve(
+            db
+            .collection(collection_Name
+              ,{"strict": true}
+              ,(err, collection) => {
+
+                if (err) {
+                  if (is_Debug_Mode) {console.log("typeof(err):", typeof(err));}
+                  // err.toString():
+                  // MongoError: Collection image_search_results does not exist. Currently in strict mode.
+                  if (is_Debug_Mode) {console.log("err.toString():", err.toString());}
+                  // err.code: undefined
+                  //if (is_Debug_Mode) {console.log("err.code:", err.code);}
+
+                  //if (is_Debug_Mode) {console.log("closing db ...");}
+                  //db.close();
+
+                  return Promise.reject(err);
+                }
+
+                if (is_Debug_Mode) {console.log("typeof(collection):", typeof(collection));}
+                //if (is_Debug_Mode) {console.log("collection.toString():", collection.toString());}
+                if (is_Debug_Mode) {console.log("String(collection):", String(collection));}
+                if (is_Debug_Mode) {console.log("collection.name:", collection.name);}
+
+
+                return Promise
+                  .resolve(
+                    //{"then": collection}
+                    collection
+                  )
+                ;
+              }
+            )
           )
         ;
         if (is_Debug_Mode) {console.log("typeof(collection_Promise):", typeof(collection_Promise));}
         if (is_Debug_Mode) {
           console.log("is collection_Promise instanceof Promise:", collection_Promise instanceof Promise);}
+        // collection_Promise.hasOwnProperty("then"): false
         if (is_Debug_Mode) {
           console.log("collection_Promise.hasOwnProperty(\"then\"):", collection_Promise.hasOwnProperty("then"));}
 
@@ -296,6 +320,7 @@ function create_Index(
               if (is_Debug_Mode) {console.log("collection:", collection_Name, "already exist");}
               //collection.indexExists(indexes, callback) => {Promise}
               collection
+                // TypeError: Cannot read property 'indexExists' of undefined
                 .indexExists(field_Name + "_" + index_Sort_Order)
                 .then((result) => {
                   if (is_Debug_Mode) {console.log("collection.indexExists(result):", result);}

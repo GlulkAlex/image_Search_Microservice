@@ -337,11 +337,14 @@ app
             .resolve({
               "db": db
               ,"collection": collection
-              ,"insert_Result": collection
+              ,"insert_Result": Promise.resolve(collection
                 .insertOne(
                   document_Obj
                   //JSON.stringify(document_Obj)
-                ).then((insert_Result) => {return insert_Result;})
+                )
+                // that part fails
+                .then((insert_Result) => {return Promise.resolve(insert_Result);})
+              )
           })
           ;
         }
@@ -349,20 +352,23 @@ app
       .then((insert_Result_Obj) => {//.result.n
           //console.log(JSON.stringify(document_Obj));
           //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
-          if (is_Debug_Mode) {console.log("result.result.n:", insert_Result_Obj.insert_Result.result.n);}
+          if (is_Debug_Mode) {console.log("insert_Result_Obj.insert_Result:", insert_Result_Obj.insert_Result);}
+          //if (is_Debug_Mode) {console.log("result.result.n:", insert_Result_Obj.insert_Result.result.n);}
           //console.log('result.result: %j', result.result);
 
           /* finally */
           if (insert_Result_Obj.db) {
             insert_Result_Obj.db.close();
-            if (is_Debug_Mode) {console.log("Close db after link insert(ion/ed)");}
+            if (is_Debug_Mode) {console.log("Close db after doc/term insert(ion/ed)");}
           }
 
           //return Promise.resolve(result.result.ok);
         }
       )
       .catch((err) => {
-          if (is_Debug_Mode) {console.log("collection.insertOne() error:", err.stack);}
+          // collection.insertOne() error: TypeError: Cannot read property 'n' of undefined
+          if (is_Debug_Mode) {console.log("collection.insertOne() error:", err.message);}
+          if (is_Debug_Mode) {console.log(err.stack);}
           /* finally */
           /*if (db) {
             db.close();
@@ -408,22 +414,108 @@ app
   .route("/api/latest/imagesearch/")
   .get(
     (req, res, next) => {
-    var json_Obj = {
-      "error": false//true//'message'
-      ,"status": 200// OK
-      ,"message": "latest imagesearch requested"
-    };
+    var json_Obj = {};
 
-    res
-      // 202 Accepted
-      // 203 Non-Authoritative Information
-      // 204 No Content
-      // 302 Found
-      .status(200)
-      //.send("Custom 200 page. All OK.")
-      .jsonp(json_Obj)
-      //.json(json_Obj)
+    // async block //
+    var connection = mongo_Client.connect(mongoLab_URI);
+
+    connection
+      .then((db) => {
+          var collection = db.collection(collection_Name);
+
+          //return db;
+          return {"db": db, "collection": collection};
+        }
+      )
+      .then((result_Obj) => {
+          var db = result_Obj.db;
+          var collection = result_Obj.collection;
+
+          //return db;
+          return Promise
+            .resolve({
+              "db": db
+              ,"collection": collection
+              ,"documents": collection
+                .find(
+                  document_Obj
+                )
+                .hint('when_1')
+                .project({"_id": false, "term": true, "when": 1})
+                .sort([['when', 1]])
+                .limit(3)
+                .toArray()
+                .then((docs) => {return docs;})
+          })
+          ;
+        }
+      )
+      .then((find_Result_Obj) => {
+          //console.log(JSON.stringify(document_Obj));
+          //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
+          // find_Result_Obj.documents: Promise { <pending> }
+          if (is_Debug_Mode) {console.log("find_Result_Obj.documents:", find_Result_Obj.documents);}
+          //console.log('result.result: %j', result.result);
+
+          /* finally */
+          if (find_Result_Obj.db) {
+            find_Result_Obj.db.close();
+            if (is_Debug_Mode) {console.log("Close db after document search");}
+          }
+
+          json_Obj = {
+            "error": false//true//'message'
+            ,"status": 200// OK
+            ,"message": "latest imagesearch requested"
+            ,"data": find_Result_Obj.documents
+          };
+
+          res
+            // 202 Accepted
+            // 203 Non-Authoritative Information
+            // 204 No Content
+            // 302 Found
+            .status(200)
+            //.send("Custom 200 page. All OK.")
+            .jsonp(json_Obj)
+            //.json(json_Obj)
+          ;
+
+          //return Promise.resolve(find_Result_Obj.documents);
+        }
+      )
+      .catch((err) => {
+          if (is_Debug_Mode) {console.log("collection.find() error:", err.message);}
+          if (is_Debug_Mode) {console.log(err.stack);}
+          /* finally */
+          /*if (db) {
+            db.close();
+            if (is_Debug_Mode) {console.log("Close db after insertOne().catch()");}
+          }*/
+          json_Obj = {
+            "error": true//'message'
+            ,"status": 204// OK
+            ,"message": "No Content Found"
+          };
+
+          res
+            // 202 Accepted
+            // 203 Non-Authoritative Information
+            // 204 No Content
+            // 302 Found
+            .status(204)
+            //.send("Custom 200 page. All OK.")
+            .jsonp(json_Obj)
+            //.json(json_Obj)
+          ;
+
+
+          //return Promise.reject(err);
+        }
+      )
     ;
+    // async block end //
+
   }
 )
 ;
