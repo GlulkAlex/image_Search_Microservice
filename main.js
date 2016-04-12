@@ -26,10 +26,11 @@ var env = () => {
 
 const is_Debug_Mode = (
   process.env.IS_DEBUG ||
+  process.env.DEBUG_MODE ||
   env.DEBUG_MODE.value ||
-  process.argv[2]
+  process.argv[2] ||
   //true
-  //false
+  false
 );
 const port_Number = (
   //process.argv[3] ||
@@ -434,7 +435,12 @@ app
     ;
   }
 );
-
+// toDO fix that
+// MongoError: Unable to execute query: error processing query:
+// planner returned error: bad hint
+// heroku[router]: at=error code=H12 desc="Request timeout"
+// method=GET path="/api/latest/imagesearch"
+// host=api-image-search-microservice.herokuapp.com
 app
   .route("/api/latest/imagesearch/")
   .get(
@@ -451,7 +457,11 @@ app
 
           collection
             .find()
-            .hint('when_1')
+            // db.image_search_results.dropIndex( { "when": 1} );// or using 'when_1'
+            // db.image_search_results.createIndex( { "when": -1}, {"background": true} );
+            // must be already in collection
+            //.hint('when_-1')// <- works
+            //.hint({ "when": -1})// <- work in mongoShell & for localhost
             .project({"_id": false, "term": true, "when": 1})
             .sort([['when', -1]])
             .limit(3)
@@ -501,6 +511,7 @@ app
                 .jsonp(json_Obj)
                 //.json(json_Obj)
               ;
+              res.end();
 
             })
             .then(() => {
@@ -514,6 +525,8 @@ app
             .catch((err) => {
                 if (is_Debug_Mode) {console.log("collection.find().catch(error):", err.message);}
                 if (is_Debug_Mode) {console.log(err.stack);}
+
+                res.end();
             })
           ;
         }
@@ -543,6 +556,7 @@ app
             .jsonp(json_Obj)
             //.json(json_Obj)
           ;
+          res.end();
 
 
           //return Promise.reject(err);
