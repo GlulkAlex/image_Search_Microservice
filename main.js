@@ -202,6 +202,12 @@ if (is_Debug_Mode) {console.log('__dirname is:', __dirname);}
 // to to turn off the header with the app.disable() method:
 app.disable('x-powered-by');
 
+/* for -> app.get('/user/:id/:page'
+app.param(['id', 'page'], function (req, res, next, value) {
+  console.log('CALLED ONLY ONCE with', value);
+  next();
+});*/
+
 app
   .route('/')
   .get(
@@ -317,57 +323,59 @@ app
       offset = req.query.offset;
     }
 
+    //>>> store search term <<<//
     // async block //
-    var connection = mongo_Client.connect(mongoLab_URI);
-
-    connection
+    //var connection =
+    mongo_Client
+      .connect(mongoLab_URI)
       .then((db) => {
           var collection = db.collection(collection_Name);
 
-          //return db;
-          return {"db": db, "collection": collection};
-        }
-      )
-      .then((result_Obj) => {
-          var db = result_Obj.db;
-          var collection = result_Obj.collection;
-
-          //return db;
-          return Promise
-            .resolve({
-              "db": db
-              ,"collection": collection
-              ,"insert_Result": Promise.resolve(collection
-                .insertOne(
-                  document_Obj
-                  //JSON.stringify(document_Obj)
-                )
-                // that part fails
-                .then((insert_Result) => {return Promise.resolve(insert_Result);})
+          // ? pending (not completed) ? or just app.listening ?
+          //return Promise.resolve(
+            collection
+              .insertOne(
+                document_Obj
+                //JSON.stringify(document_Obj)
               )
-          })
+              .then((insert_Result) => {
+                  //console.log(JSON.stringify(document_Obj));
+                  //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
+                  if (is_Debug_Mode) {console.log("insert_Result.ops:", insert_Result.ops);}
+                  if (is_Debug_Mode) {console.log("insert_Result.insertedCount:", insert_Result.insertedCount);}
+                  if (is_Debug_Mode) {console.log("result.result.n:", insert_Result.result.n);}
+                  if (is_Debug_Mode) {console.log("result.result.ok:", Boolean(insert_Result.result.ok));}
+                  //console.log('result.result: %j', result.result);
+
+                  /* finally */
+                  /*if (db) {
+                    db.close();
+                    if (is_Debug_Mode) {console.log("Close db after doc/term insert(ion/ed)");}
+                  }*/
+                }
+              )
+              .then(() => {
+                  /* finally */
+                  if (db) {
+                    db.close();
+                    if (is_Debug_Mode) {console.log("Close db after doc/term insert(ion/ed)");}
+                  }
+                }
+              )
+              .catch((err) => {
+                if (is_Debug_Mode) {console.log("collection.insertOne() error:", err.message);}
+                if (is_Debug_Mode) {console.log(err.stack);}
+                //if (is_Debug_Mode) {console.log("Closing db ...");}
+                //db.close();
+              })
+            //)
           ;
-        }
-      )
-      .then((insert_Result_Obj) => {//.result.n
-          //console.log(JSON.stringify(document_Obj));
-          //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
-          if (is_Debug_Mode) {console.log("insert_Result_Obj.insert_Result:", insert_Result_Obj.insert_Result);}
-          //if (is_Debug_Mode) {console.log("result.result.n:", insert_Result_Obj.insert_Result.result.n);}
-          //console.log('result.result: %j', result.result);
 
-          /* finally */
-          if (insert_Result_Obj.db) {
-            insert_Result_Obj.db.close();
-            if (is_Debug_Mode) {console.log("Close db after doc/term insert(ion/ed)");}
-          }
-
-          //return Promise.resolve(result.result.ok);
         }
       )
       .catch((err) => {
           // collection.insertOne() error: TypeError: Cannot read property 'n' of undefined
-          if (is_Debug_Mode) {console.log("collection.insertOne() error:", err.message);}
+          if (is_Debug_Mode) {console.log("connect.catch(error):", err.message);}
           if (is_Debug_Mode) {console.log(err.stack);}
           /* finally */
           /*if (db) {
@@ -381,15 +389,30 @@ app
     ;
     // async block end //
 
+    //>>> GET images info / data from web <<<//
+    // async block //
+    // async block end //
     json_Obj = {
       "error": false//true//'message'
       ,"status": 200// OK
       ,"message": "imagesearch requested (req.path): " + req.path +
+        ", req.hostname: " + req.hostname +
+        ", req.baseUrl: " + req.baseUrl +
+        ", req.originalUrl: " + req.originalUrl +
         ", req.params.term:" + req.params.term +
         ", req.query:" + JSON.stringify(req.query) +
         ", offset:" + offset
     };
 
+    /*res
+      .links({
+        next: 'http://api.example.com/users?page=2'
+        ,last: 'http://api.example.com/users?page=5'
+    });*/
+
+    res.set('x-timestamp', Date.now());
+    //res.sendStatus(200);
+    // equivalent to res.status(200).send('OK')
     res
       // 202 Accepted
       // 203 Non-Authoritative Information
@@ -403,7 +426,9 @@ app
       // res.type('application/json');   // => 'application/json'
       // res.type('png');                // => image/png:
       // so can not use it simultaneously
+      //console.log(res.headersSent); // false
       //.send("Custom 200 page. All OK.")
+      //console.log(res.headersSent); // true
       .jsonp(json_Obj)
       //.json(json_Obj)
     ;
@@ -416,6 +441,7 @@ app
     (req, res, next) => {
     var json_Obj = {};
 
+    //>>> GET stored terms data from db <<<//
     // async block //
     var connection = mongo_Client.connect(mongoLab_URI);
 
@@ -423,69 +449,78 @@ app
       .then((db) => {
           var collection = db.collection(collection_Name);
 
-          //return db;
-          return {"db": db, "collection": collection};
-        }
-      )
-      .then((result_Obj) => {
-          var db = result_Obj.db;
-          var collection = result_Obj.collection;
+          collection
+            .find()
+            .hint('when_1')
+            .project({"_id": false, "term": true, "when": 1})
+            .sort([['when', -1]])
+            .limit(3)
+            .toArray()
+            .then((documents) => {
+              if (is_Debug_Mode) {console.log("documents:", documents);}
+              if (is_Debug_Mode) {console.log("documents.length:", documents.length);}
 
-          //return db;
-          return Promise
-            .resolve({
-              "db": db
-              ,"collection": collection
-              ,"documents": collection
-                .find(
-                  document_Obj
-                )
-                .hint('when_1')
-                .project({"_id": false, "term": true, "when": 1})
-                .sort([['when', 1]])
-                .limit(3)
-                .toArray()
-                .then((docs) => {return docs;})
-          })
+              json_Obj = {
+                "error": false//true//'message'
+                ,"status": 200// OK
+                ,"message": "latest imagesearch requested"
+                ,"data": documents
+              };
+
+              /*
+              req.fresh
+              Indicates whether the request is “fresh.” It is the opposite of req.stale.
+
+              It is true
+              if the cache-control request header doesn’t have
+              a no-cache directive and
+              any of the following are true:
+                - The `if-modified-since` request header is specified and
+                `last-modified` request header is
+                equal to or
+                earlier than
+                the `modified` response header.
+                - The `if-none-match` request header is *.
+                - The `if-none-match` request header,
+                after being parsed into its directives,
+                does not match the `etag` response header.
+              req.fresh => true
+              */
+              //res.set('x-timestamp', Date.now());
+              //If-Modified-Since: Sat, 29 Oct 1994 19:43:31 GMT
+              //If-None-Match: W/"xyzzy", W/"r2d2xxxx", W/"c3piozzzz"
+              //res.set('ETag', Date.now());
+              //res.set('Cache-Control', "no-cache");
+              res
+                // 202 Accepted
+                // 203 Non-Authoritative Information
+                // 204 No Content
+                // 302 Found
+                .status(200)
+                //.send("Custom 200 page. All OK.")
+                .jsonp(json_Obj)
+                //.json(json_Obj)
+              ;
+
+            })
+            .then(() => {
+                /* finally */
+                if (db) {
+                  db.close();
+                  if (is_Debug_Mode) {console.log("Close db after document search");}
+                }
+              }
+            )
+            .catch((err) => {
+                if (is_Debug_Mode) {console.log("collection.find().catch(error):", err.message);}
+                if (is_Debug_Mode) {console.log(err.stack);}
+            })
           ;
         }
       )
-      .then((find_Result_Obj) => {
-          //console.log(JSON.stringify(document_Obj));
-          //if (is_Debug_Mode) {console.log('inserted document_Obj: %j', document_Obj);}
-          // find_Result_Obj.documents: Promise { <pending> }
-          if (is_Debug_Mode) {console.log("find_Result_Obj.documents:", find_Result_Obj.documents);}
-          //console.log('result.result: %j', result.result);
-
-          /* finally */
-          if (find_Result_Obj.db) {
-            find_Result_Obj.db.close();
-            if (is_Debug_Mode) {console.log("Close db after document search");}
-          }
-
-          json_Obj = {
-            "error": false//true//'message'
-            ,"status": 200// OK
-            ,"message": "latest imagesearch requested"
-            ,"data": find_Result_Obj.documents
-          };
-
-          res
-            // 202 Accepted
-            // 203 Non-Authoritative Information
-            // 204 No Content
-            // 302 Found
-            .status(200)
-            //.send("Custom 200 page. All OK.")
-            .jsonp(json_Obj)
-            //.json(json_Obj)
-          ;
-
-          //return Promise.resolve(find_Result_Obj.documents);
-        }
-      )
+      // does this also catch error from collection.find() ?
       .catch((err) => {
-          if (is_Debug_Mode) {console.log("collection.find() error:", err.message);}
+          if (is_Debug_Mode) {console.log("connection.catch(error):", err.message);}
           if (is_Debug_Mode) {console.log(err.stack);}
           /* finally */
           /*if (db) {
