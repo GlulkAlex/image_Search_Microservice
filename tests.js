@@ -50,7 +50,7 @@ const mongo_Client = require('mongodb').MongoClient;
 //*** application modules ***//
 //const host_Name_Validator = require('./host_Name_Validator.js');
 const db_Helpers = require('./db_Helpers.js');
-//const comparator = require('./comparator.js');
+const html_Parser = require('./html_Parser.js');
 //*** application modules end ***//
 
 //*** helpers ***//
@@ -307,6 +307,71 @@ var test_2_0 = function(description){
   };
 }("test 2.0: must create collection if non-exist & specific index in it if non-exist")
 //("image_search_results", "when")
+;
+
+var test_3_0 = function(description){
+  "use strict";
+  // curred
+  return function(
+    data_Chunks//: list of str
+    //,expected_Result//:list of bool
+  ) {// => ? list of bool ?
+    "use strict";
+    console.log(description);
+
+    var results_List = [];
+    var result_Obj = {};
+    var result = "";
+    var extracted_Tags = [];//{};
+    var current_Tag = "";
+    var incomplete_Data = "";
+
+    //var list_Index = 0;
+    result_Obj.extracted_Tags = extracted_Tags;
+    result_Obj.current_Tag = current_Tag;
+    result_Obj.incomplete_Data = incomplete_Data;
+    //for () {}
+    data_Chunks
+      .forEach((item, index) => {//: => void
+        result = html_Parser
+          .parse_HTML(
+            item//: str
+            ,extracted_Tags//: obj | dictionary
+            ,current_Tag//: str
+            ,incomplete_Data//: str
+        );
+
+      extracted_Tags = result_Obj.extracted_Tags;
+      current_Tag = result_Obj.current_Tag;
+      incomplete_Data = result_Obj.incomplete_Data;
+
+      return null;//: => void
+    })
+    ;
+    console.log("result:", result);
+
+
+    return null;
+  };
+}("test 3.0: must parse HTML & return DIV innerHTML as object / dictionary ")
+([
+  "<di"
+  ,'v class="rg_meta">' +
+    '{"cl":6,"id":"JJ6AX2fz8h4wLM:",' +
+    '"isu":"wallpaperswide.com","itg":false,"ity":"jpg",' +
+    '"oh":720,' + // <- image height
+    '"ou":"http://wallpaperswide.com/download/cute_owl-wallpaper-1152x720.jpg",' + // <- "url"
+    '"ow":1152,' + // <- image width
+    '"pt":"Cute Owl HD desktop wallpaper : Widescreen : High Definition ...",' + // <- "snippet"
+    '"rid":"2kOGT5u3dPuyQM",' +
+    '"ru":"http://wallpaperswide.com/cute_owl-wallpapers.html",' + // <- "context"
+    '"s":"Wide 16:10","th":177,' +
+    '"tu":"https://encrypted-tbn0.gstatic.com/' +
+    'images?q\u003dtbn:ANd9GcRmavtLjp8djM6VjoHB8xr8WOVp8rlsO1Puk4gClrBTZkHR99U8",' +// <- "thumbnail"
+    '"tw":284}' +
+    '<"'
+  ,"/div>"
+])
 ;
 /*** tests end ***/
 

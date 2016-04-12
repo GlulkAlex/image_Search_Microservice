@@ -435,7 +435,7 @@ app
     ;
   }
 );
-// toDO fix that
+// DONE fix that
 // MongoError: Unable to execute query: error processing query:
 // planner returned error: bad hint
 // heroku[router]: at=error code=H12 desc="Request timeout"
