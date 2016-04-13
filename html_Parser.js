@@ -47,10 +47,12 @@ function pad_With(
 function parse_HTML(
   data_Chunk//: str
   ,extracted_Tags//: (obj | dictionary) | list of (obj | dictionary)
-  ,current_Tag//: str
+  ,parser_State//: obj | dictionary
+  //,current_Tag//: str
   //,open_Tags//: obj | dictionary
   //,processing_State//: obj | dictionary
-  ,incomplete_Data//: str
+  //,incomplete_Data//: str
+  ,is_Debug_Mode//: bool <- optional
 ) {// => Promise(obj) <- parse state
   "use strict";
 
@@ -72,15 +74,18 @@ function parse_HTML(
   var i = 0;
   var chunk_Length = data_Chunk.length;
   var current_Char = "";
-  var open_Tag_Slide_Window = "";//"____"; // | "<div".length == 4
+  //>>> parser's state <<<///
+  var open_Tag_Start_Slide_Window = "";//"____"; // | "<div".length == 4
   var tag_Attribute_Slide_Window = "";//"_______________"; // | 'class="rg_meta"'.length == 15
-  var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5
+  var open_Tag_End_Slide_Window = "";//"_"; // | ">".length == 1
+  var tag_Content = "";// tag_Content - close_Tag_Slide_Window -> drop 5 left chars | "".slice(0, -5)
+  var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5 | "</".length == 2
 
   //*** defaults ***//
   if (extracted_Tags) {} else {
     extracted_Tags = [];//{};
   }
-  if (current_Tag) {} else {
+  /*if (current_Tag) {} else {
     current_Tag = {
       "open_Tag": ""
       ,"tag_Attribute_Name": ""
@@ -88,43 +93,110 @@ function parse_HTML(
       ,"tag_Content": ""
       ,"close_Tag": ""
     };
-  }
-  if (incomplete_Data) {} else {
+  }*/
+  /*if (incomplete_Data) {} else {
     incomplete_Data = "";
-  }
+  }*/
   //*** defaults end ***//
 
+  //*** initialization ***//
+  if (parser_State) { // is not null | undefined & is an proper object
+    //>>> set <<<//
+    open_Tag_Start_Slide_Window = parser_State.open_Tag_Start;
+    tag_Attribute_Slide_Window = parser_State.tag_Attribute;
+    open_Tag_End_Slide_Window = parser_State.open_Tag_End;
+    tag_Content = parser_State.tag_Content;
+    close_Tag_Slide_Window = parser_State.close_Tag;
+  } else {
+  }
+  //*** initialization end ***//
+
   for (;i < chunk_Length;i++) {
+
     current_Char = data_Chunk[i];
-    if (current_Tag != "") {
-      if (current_Char != ">") {
-        current_Tag.open_Tag += current_Char;
-      } else {
-        //>>> open tag -> end(s)
-        current_Tag.open_Tag = current_Tag;
-        extracted_Tags
-          .push(
-            current_Tag.open_Tag
-          )
-        ;
-        current_Tag.open_Tag = "";
-      }
+
+    if (
+      open_Tag_Start_Slide_Window == "" ||
+      open_Tag_Start_Slide_Window.length < 4 ||
+      open_Tag_Start_Slide_Window != "<div"
+      ) {
+      open_Tag_Start_Slide_Window = (open_Tag_Start_Slide_Window + current_Char).slice(-4);
+    }
+    if (
+      tag_Attribute_Slide_Window == "" ||
+      tag_Attribute_Slide_Window.length < 15 ||
+      tag_Attribute_Slide_Window != 'class="rg_meta"'
+      ) {
+      tag_Attribute_Slide_Window = (tag_Attribute_Slide_Window + current_Char).slice(-15);
+    }
+    if (
+      open_Tag_Start_Slide_Window == "<div" &&
+      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
+      open_Tag_End_Slide_Window != '>'
+      ) {
+      open_Tag_End_Slide_Window = current_Char;
+    }
+    /*
+    if (
+      (open_Tag_Start_Slide_Window == "<div" &&
+      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
+      open_Tag_End_Slide_Window == '>') &&
+      (close_Tag_Slide_Window == "" ||
+      close_Tag_Slide_Window.length < 5 ||
+      close_Tag_Slide_Window != "</div")
+    ) {
+      tag_Content += current_Char;
+    }
+    */
+    if (
+      (open_Tag_Start_Slide_Window == "<div" &&
+      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
+      open_Tag_End_Slide_Window == '>') &&
+      (close_Tag_Slide_Window == "" ||
+      close_Tag_Slide_Window.length < 5 ||
+      close_Tag_Slide_Window != "</div")
+    ) {
+      tag_Content += current_Char;
+      close_Tag_Slide_Window = (close_Tag_Slide_Window + current_Char).slice(-5);
+    }
+
+    if (close_Tag_Slide_Window == "</div") {
+
+      extracted_Tags
+        .push(
+          tag_Content.slice(0, -5)
+        )
+      ;
+      //>>> reset <<<//
+      open_Tag_Start_Slide_Window = "";
+      tag_Attribute_Slide_Window = "";
+      open_Tag_End_Slide_Window = "";
+      tag_Content = "";//tag_Content.slice(0, -5);
+      close_Tag_Slide_Window = "";
+
     } else {
-      if (current_Char == "<") {
-        //>>> open tag -> possible start
-        current_Tag.open_Tag += current_Char;
-        if (current_Tag.open_Tag == "DIV") {
-        }
-      } else {
-      }
     }
   }
+  //>>> reset <<<//
+  //TypeError: Cannot assign to read only property 'open_Tag_Start'
+  /*
+  parser_State.open_Tag_Start = open_Tag_Start_Slide_Window;
+  parser_State.tag_Attribute = tag_Attribute_Slide_Window;
+  parser_State.open_Tag_End = open_Tag_End_Slide_Window;
+  parser_State.tag_Content = tag_Content;
+  parser_State.close_Tag = close_Tag_Slide_Window;
+  */
   //return Promise
   //  .resolve(
   return {
         "extracted_Tags": extracted_Tags
-        ,"current_Tag": current_Tag
-        ,"incomplete_Data": incomplete_Data
+        ,"parser_State": {
+          "open_Tag_Start": open_Tag_Start_Slide_Window
+          ,"tag_Attribute": tag_Attribute_Slide_Window
+          ,"open_Tag_End": open_Tag_End_Slide_Window
+          ,"tag_Content": tag_Content
+          ,"close_Tag": close_Tag_Slide_Window
+        }
       }
   //  )
   ;

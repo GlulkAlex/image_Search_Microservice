@@ -325,6 +325,7 @@ var test_3_0 = function(description){
     var extracted_Tags = [];//{};
     var current_Tag = "";
     var incomplete_Data = "";
+    var parser_State;// = {};
 
     //var list_Index = 0;
     result_Obj.extracted_Tags = extracted_Tags;
@@ -337,15 +338,13 @@ var test_3_0 = function(description){
           .parse_HTML(
             item//: str
             ,extracted_Tags//: obj | dictionary
-            ,current_Tag//: str
-            ,incomplete_Data//: str
+            ,parser_State
         );
 
-      extracted_Tags = result_Obj.extracted_Tags;
-      current_Tag = result_Obj.current_Tag;
-      incomplete_Data = result_Obj.incomplete_Data;
+        extracted_Tags = result_Obj.extracted_Tags;
+        parser_State = result_Obj.parser_State;
 
-      return null;//: => void
+        return null;//: => void
     })
     ;
     console.log("result:", result);
