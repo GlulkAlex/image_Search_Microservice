@@ -1,4 +1,42 @@
 "use strict";
+// helper
+// pad string with char
+/** str.replace("Microsoft","W3Schools");
+* 'class="rg_meta"'.replace(/./g,"_"); => '_______________'
+*/
+function replace_With(
+  source_Str//: str
+  ,replace_Char//: str
+) {
+  "use strict";
+  var result = "";//[];
+  //>>> defaults <<<//
+  if (replace_Char) {} else {replace_Char = "_";}
+  //>>> defaults end <<<//
+
+  source_Str
+    .split("")
+    .forEach((item, index) => {result += replace_Char;})
+
+  return result;
+}
+
+function pad_With(
+  source_Str//: str
+  ,replace_Char//: str
+) {
+  "use strict";
+  var result = "";//[];
+  var source_Str_Length = source_Str.length;
+  var index = 0;
+  //>>> defaults <<<//
+  if (replace_Char) {} else {replace_Char = "_";}
+  //>>> defaults end <<<//
+  for(;index < source_Str_Length;index++){result += replace_Char;}
+
+  return result;
+}
+
 // TODO custom parser function must:
 // TODO - extract from html (body) ["url", "snippet", "context", "thumbnail"]
 // TODO - retrieve tags (start/end) for DIV
@@ -25,15 +63,18 @@ function parse_HTML(
     // 7 chars after '="' after "tag_Attribute_Name"
     ,"tag_Attribute_Value": "rg_meta"
     // chars after '">' after "tag_Attribute_Value" and before "close_Tag"
-    ,"tag_Content": "{\"cl\":6,\"id\":\"JJ6AX2fz8h4wLM:\", ..."
+    ,"tag_Content": "{\"cl\":6,\"id\":\"JJ6AX2fz8h4wLM:\", ..."//  <- may be incomplete
     // 3 chars after '</' after "open_Tag"
     // no else / others inner tags & divs expected
-    ,"close_Tag": "DIV"//</div>
+    ,"close_Tag": "DIV"//</div> <- may never being completed
   };
   var str_Item_Index = 0;
   var i = 0;
   var chunk_Length = data_Chunk.length;
   var current_Char = "";
+  var open_Tag_Slide_Window = "";//"____"; // | "<div".length == 4
+  var tag_Attribute_Slide_Window = "";//"_______________"; // | 'class="rg_meta"'.length == 15
+  var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5
 
   //*** defaults ***//
   if (extracted_Tags) {} else {
