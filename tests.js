@@ -275,6 +275,147 @@ var test_1_1 = function(description){
 // res.type('application/json');   // => 'application/json'
 ;
 
+var test_1_2 = function(description){
+  "use strict";
+  // curred
+  return function(
+    url//:str
+    ,expected_Result//:int
+  )/* => list of bool */ {
+    "use strict";
+    console.log(description);
+
+    var results = [];
+    var result;
+    var getter = require('https');
+    //var express = require('express');
+    //var app = express();
+
+    //app.on('mount', callback(parent))
+    //app.on('error', (err) => {console.log("express error:", err.stack);});
+
+    return Promise.resolve(
+    /*
+    app
+      // Routes HTTP GET requests (to the running app.listen(port, [hostname], [backlog], [callback]))
+      // to the specified path
+      // with the specified callback functions.
+      .get(
+        url,
+        function (err, req, res, next) {
+          !(err) || console.log("express error:", err.stack);
+          result = res.get('Content-Type');
+          console.log("res.get('Content-Type'):", result);
+          //res.send('GET request to homepage');
+          assert(result == expected_Result);
+          assert.equal(result, expected_Result);
+          //assert.deepEqual(results, expected_Results);
+          next();
+
+          return result;
+        }
+      */
+      getter
+        .get(
+          url,
+          (response) => {
+            var content_Type;
+            var extracted_Tags = [];
+            var result_Obj = {};
+            var parser_State;
+            var last_Data_Chunk = "";
+            // str is too short for that
+            var page_Content = new Buffer("");
+            var total_Length = page_Content.length;
+            var data_Chunk;// = new Buffer("");
+
+            console.log("Got response:", response.statusCode);
+
+            //content_Type.split(";")[0]
+            if (response.hasOwnProperty("getHeader")) {
+              content_Type = response.getHeader('content-type');
+            } else {
+              content_Type = response.headers['content-type'];
+            }
+            content_Type = content_Type.split(";")[0];
+
+            console.log("content_Type:", content_Type);
+            console.log("headers: ", response.headers);
+
+            //readable
+            //response.resume();
+            // `explicitly` convert to `Strings`
+            // rather than standard `Buffer` `objects`
+            response.setEncoding('utf8');
+            response
+              // for big page => only 1st chunk will be returned
+              .on(
+              //.once(
+                'data',
+                (data) => {
+                  // row data Buffer
+                  //console.log("data:", data);
+                  //console.log("typeof(data): ", typeof(data), "data.length: ", data.length);
+                  if (extracted_Tags.length < expected_Result) {
+                    //console.log("extracting ...");
+                    console.log("extracting ... typeof(data): ", typeof(data), "data.length: ", data.length);
+                    result_Obj = html_Parser
+                      .parse_HTML(
+                        data//: str
+                        ,extracted_Tags//: obj | dictionary
+                        // it must change over time
+                        ,parser_State
+                        ,is_Debug_Mode
+                    );
+
+                    extracted_Tags = result_Obj.extracted_Tags;
+                    parser_State = result_Obj.parser_State;
+                  }
+                  last_Data_Chunk = data;
+                  //page_Content += data;
+                  data_Chunk = Buffer.from(data);
+                  page_Content = Buffer.concat([page_Content, data_Chunk], page_Content.length + data_Chunk.length);
+                }
+            );
+
+            //response.end([data][, encoding][, callback])
+            //response.body ? console.log("data:", data) : console.log("response.body:", response.body);
+            //console.log("response.body:", response.body);
+            response
+              .once(
+                'end',
+                () => {
+                  console.log("extracted_Tags.length: ", extracted_Tags.length);
+                  console.log("extracted_Tags: ", extracted_Tags);
+                  console.log("last_Data_Chunk: ", last_Data_Chunk);
+                  console.log("page_Content: ");
+                  //console.log(page_Content.slice(-500));
+                  console.log("page_Content.length:", page_Content.length);
+                  // buf.toString('utf8',0,5);
+                  console.log(page_Content.toString('utf8', 55000, 57500));
+                  //'content-type': 'text/html; charset=windows-1251',
+                  //assert(content_Type == expected_Result);
+                  assert.equal(extracted_Tags.length, expected_Result);
+                  //assert.deepEqual(results, expected_Results);
+                  //next();
+
+                  return extracted_Tags;
+                }
+              )
+            ;
+
+            response.on('error', (err) => {console.log("response.on('error')", err.message);});
+
+          }
+        )
+        .on('error', (err) => {console.log("url getter error:", err.stack);}
+      )
+    );
+  };
+}("test 1.1: must extract content of DIV with specific class, from response from remote server")
+("https://www.google.ru/search?q=cute+owl&tbm=isch", 3)
+;
+
 /* somehow it works */
 var test_2_0 = function(description){
   "use strict";
@@ -333,27 +474,32 @@ var test_3_0 = function(description){
     result_Obj.incomplete_Data = incomplete_Data;
     //for () {}
     data_Chunks
-      .forEach((item, index) => {//: => void
-        result = html_Parser
-          .parse_HTML(
-            item//: str
-            ,extracted_Tags//: obj | dictionary
-            ,parser_State
-        );
+      .forEach((item, index, data_Chunks) => {//: => void
 
-        extracted_Tags = result_Obj.extracted_Tags;
-        parser_State = result_Obj.parser_State;
+          result_Obj = html_Parser
+            .parse_HTML(
+              item//: str
+              ,extracted_Tags//: obj | dictionary
+              // it must change over time
+              ,parser_State
+              //,is_Debug_Mode
+          );
 
-        return null;//: => void
-    })
+          extracted_Tags = result_Obj.extracted_Tags;
+          parser_State = result_Obj.parser_State;
+
+          //return null;//: => void
+        }
+        ,parser_State
+      )
     ;
-    console.log("result:", result);
+    console.log("result:", result_Obj);
 
 
-    return null;
+    return null;//: => void
   };
 }("test 3.0: must parse HTML & return DIV innerHTML as object / dictionary ")
-([
+/*([
   "<di"
   ,'v class="rg_meta">' +
     '{"cl":6,"id":"JJ6AX2fz8h4wLM:",' +
@@ -368,9 +514,9 @@ var test_3_0 = function(description){
     '"tu":"https://encrypted-tbn0.gstatic.com/' +
     'images?q\u003dtbn:ANd9GcRmavtLjp8djM6VjoHB8xr8WOVp8rlsO1Puk4gClrBTZkHR99U8",' +// <- "thumbnail"
     '"tw":284}' +
-    '<"'
+    '<'
   ,"/div>"
-])
+])*/
 ;
 /*** tests end ***/
 

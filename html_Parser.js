@@ -46,6 +46,7 @@ function pad_With(
 // helper
 function parse_HTML(
   data_Chunk//: str
+  //>>> main data accumulator <<<//
   ,extracted_Tags//: (obj | dictionary) | list of (obj | dictionary)
   ,parser_State//: obj | dictionary
   //,current_Tag//: str
@@ -82,8 +83,13 @@ function parse_HTML(
   var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5 | "</".length == 2
 
   //*** defaults ***//
-  if (extracted_Tags) {} else {
+  if (is_Debug_Mode) {console.log("defaults:");}
+  //if (is_Debug_Mode) {console.log("extracted_Tags:", extracted_Tags);}
+  if (extracted_Tags) {
+    if (is_Debug_Mode) {console.log("extracted_Tags.length:", extracted_Tags.length);}
+  } else {
     extracted_Tags = [];//{};
+    if (is_Debug_Mode) {console.log("extracted_Tags is empty:", extracted_Tags);}
   }
   /*if (current_Tag) {} else {
     current_Tag = {
@@ -100,6 +106,8 @@ function parse_HTML(
   //*** defaults end ***//
 
   //*** initialization ***//
+  if (is_Debug_Mode) {console.log("initialization:");}
+  if (is_Debug_Mode) {console.log("parser_State:", parser_State);}
   if (parser_State) { // is not null | undefined & is an proper object
     //>>> set <<<//
     open_Tag_Start_Slide_Window = parser_State.open_Tag_Start;
@@ -109,6 +117,11 @@ function parse_HTML(
     close_Tag_Slide_Window = parser_State.close_Tag;
   } else {
   }
+  if (is_Debug_Mode) {console.log("open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window);}
+  if (is_Debug_Mode) {console.log("tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window);}
+  if (is_Debug_Mode) {console.log("open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window);}
+  if (is_Debug_Mode) {console.log("tag_Content.length:", tag_Content.length);}
+  if (is_Debug_Mode) {console.log("close_Tag_Slide_Window:", close_Tag_Slide_Window);}
   //*** initialization end ***//
 
   for (;i < chunk_Length;i++) {
@@ -121,6 +134,10 @@ function parse_HTML(
       open_Tag_Start_Slide_Window != "<div"
       ) {
       open_Tag_Start_Slide_Window = (open_Tag_Start_Slide_Window + current_Char).slice(-4);
+      if (is_Debug_Mode) {
+        console.log(
+          "add to open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window,
+          ".length:", open_Tag_Start_Slide_Window.length);}
     }
     if (
       tag_Attribute_Slide_Window == "" ||
@@ -128,6 +145,10 @@ function parse_HTML(
       tag_Attribute_Slide_Window != 'class="rg_meta"'
       ) {
       tag_Attribute_Slide_Window = (tag_Attribute_Slide_Window + current_Char).slice(-15);
+      if (false) {
+        console.log(
+          "add to tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window,
+          ".length:", tag_Attribute_Slide_Window.length);}
     }
     if (
       open_Tag_Start_Slide_Window == "<div" &&
@@ -135,6 +156,10 @@ function parse_HTML(
       open_Tag_End_Slide_Window != '>'
       ) {
       open_Tag_End_Slide_Window = current_Char;
+      if (is_Debug_Mode) {
+        console.log(
+          "add to open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window,
+          ".length:", open_Tag_End_Slide_Window.length);}
     }
     /*
     if (
@@ -158,15 +183,20 @@ function parse_HTML(
     ) {
       tag_Content += current_Char;
       close_Tag_Slide_Window = (close_Tag_Slide_Window + current_Char).slice(-5);
+      //if (is_Debug_Mode) {console.log("add to tag_Content.length:", tag_Content.length);}
+      if (is_Debug_Mode) {
+        console.log(
+          "add to close_Tag_Slide_Window:", close_Tag_Slide_Window, ".length:", close_Tag_Slide_Window.length);}
     }
 
     if (close_Tag_Slide_Window == "</div") {
 
       extracted_Tags
         .push(
-          tag_Content.slice(0, -5)
+          tag_Content.slice(1, -5)
         )
       ;
+      if (is_Debug_Mode) {console.log("push to extracted_Tags.length:", extracted_Tags.length);}
       //>>> reset <<<//
       open_Tag_Start_Slide_Window = "";
       tag_Attribute_Slide_Window = "";
@@ -186,6 +216,12 @@ function parse_HTML(
   parser_State.tag_Content = tag_Content;
   parser_State.close_Tag = close_Tag_Slide_Window;
   */
+  if (is_Debug_Mode) {console.log("return value:");}
+  if (is_Debug_Mode) {console.log("open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window);}
+  if (is_Debug_Mode) {console.log("tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window);}
+  if (is_Debug_Mode) {console.log("open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window);}
+  if (is_Debug_Mode) {console.log("tag_Content.length:", tag_Content.length);}
+  if (is_Debug_Mode) {console.log("close_Tag_Slide_Window:", close_Tag_Slide_Window);}
   //return Promise
   //  .resolve(
   return {
