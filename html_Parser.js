@@ -263,6 +263,7 @@ function extract_Div_rg_meta_Content(
 // TODO custom parser function must:
 // TODO - extract from html (body) data for ["url", "snippet", "context", "thumbnail"]
 // "context" <- page where image url used (embedded)
+// "url" <- for image (currently) is missing in response (for specific GET request) body
 //<td style="width:25%;word-wrap:break-word">
 //  <a
 //    href="/url?q=   <<- context start
@@ -273,7 +274,7 @@ function extract_Div_rg_meta_Content(
 //    target="_blank">
 //      <img
 //        height="101"
-//        src="  <<- thumbnail start
+//        src="  <<- thumbnail start, after /url?q=, inside <img
 //          https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSPKRdOQ8xYQ8Yt6_W9MFLT7wZnXTVMr55MW-cJsyBeuXMKMHmgBHtkLjMr
 //        "  <<- thumbnail end
 //        width="150"
@@ -288,7 +289,7 @@ function extract_Div_rg_meta_Content(
 //    ">
 //    catersnews.com
 //  </cite>
-//  <br>    <<- snippet start
+//  <br>    <<- snippet start after </cite>
 //    Adorable moment two tiny <b>mice</b>
 //  <br>    <<- snippet end
 //  3000 × 2022 - 894k&nbsp;-&nbsp;jpg
@@ -326,11 +327,22 @@ function parse_HTML(
   var chunk_Length = data_Chunk.length;
   var current_Char = "";
   //>>> parser's state <<<///
-  var open_Tag_Start_Slide_Window = "";//"____"; // | "<div".length == 4
-  var tag_Attribute_Slide_Window = "";//"_______________"; // | 'class="rg_meta"'.length == 15
-  var open_Tag_End_Slide_Window = "";//"_"; // | ">".length == 1
-  var tag_Content = "";// tag_Content - close_Tag_Slide_Window -> drop 5 left chars | "".slice(0, -5)
-  var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5 | "</".length == 2
+  //var open_Tag_Start_Slide_Window = "";//"____"; // | "<div".length == 4
+  //var tag_Attribute_Slide_Window = "";//"_______________"; // | 'class="rg_meta"'.length == 15
+  //var open_Tag_End_Slide_Window = "";//"_"; // | ">".length == 1
+  //var tag_Content = "";// tag_Content - close_Tag_Slide_Window -> drop 5 left chars | "".slice(0, -5)
+  //var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5 | "</".length == 2
+  var context_Start = "";// "/url?q="
+  var context = "";// "http://www.catersnews.com/ ..."
+  var context_End = "";// "&amp;"
+  var thumbnail_Start = "";// 'src="'
+  var thumbnail = "";// "https://encrypted-tbn1.gstatic.com/images?q=tbn:"
+  var thumbnail_End = "";// '"'
+  var snippet_Start = "";// '<br>'
+  // TODO skip all in snippet "< ... >"
+  var snippet = "";// "Adorable moment two tiny <b>mice</b>"
+  var snippet_Tag = "";// "< ... >" <- [0] | .slice(0, 1) == "<" && .slice(-1) == ">"
+  var snippet_End = "";// snippet_Tag == '<br>'
 
   //*** defaults ***//
   if (is_Debug_Mode) {console.log("defaults:");}

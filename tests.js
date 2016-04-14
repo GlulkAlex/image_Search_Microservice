@@ -384,7 +384,8 @@ var test_1_2 = function(description){
                   //console.log("data:", data);
                   //console.log("typeof(data): ", typeof(data), "data.length: ", data.length);
                   if (has_DIV_Tag_Meta) {} else {
-                    // TODO it seems like page data & page view is not the same
+                    // DOne it seems like page data & page view is not the same
+                    // -> can not fix that
                     // some client side magic goes here
                     //if (data.indexOf('https://encrypted-tbn3.gstatic.com') == -1) {
                     //if (data.indexOf('><a href="/url?q=') == -1) {
@@ -450,6 +451,8 @@ var test_1_2 = function(description){
                   The kernel ignores the position argument and
                   always appends the data to the end of the file.
                   */
+                  //>>> preserve on disk
+                  /*
                   fs
                     .appendFile('get_Response.html'
                       ,page_Content
@@ -458,6 +461,7 @@ var test_1_2 = function(description){
                         if (err) {throw err;}
                         console.log('The page_Content was appended to file!');
                   });
+                  */
                   console.log("extracted_Tags.length: ", extracted_Tags.length);
                   console.log("extracted_Tags: ", extracted_Tags);
                   //console.log("last_Data_Chunk: ", last_Data_Chunk);
