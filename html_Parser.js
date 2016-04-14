@@ -333,7 +333,7 @@ function parse_HTML(
   var thumbnail_Start = "";// 'src="'
   var thumbnail = "";// "https://encrypted-tbn1.gstatic.com/images?q=tbn:"
   var thumbnail_End = "";// '"'
-  var snippet_Start = "";// '<br>'
+  var snippet_Start = "";// '<br>', next after </cite>
   // TODO skip all in snippet "< ... >"
   var snippet = "";// "Adorable moment two tiny <b>mice</b>"
   var snippet_Tag = "";// "< ... >" <- [0] | .slice(0, 1) == "<" && .slice(-1) == ">"
@@ -352,7 +352,7 @@ function parse_HTML(
 
   //*** initialization ***//
   if (is_Debug_Mode) {console.log("initialization:");}
-  if (is_Debug_Mode) {console.log("parser_State:", parser_State);}
+  //if (is_Debug_Mode) {console.log("parser_State:", parser_State);}
   if (parser_State) { // is not null | undefined & is an proper object
     //>>> set <<<//
     context_Start = parser_State.context_Start;
@@ -385,7 +385,7 @@ function parse_HTML(
         console.log(
           "add to context_Start:", context_Start,
           ".length:", context_Start.length);}
-      if (is_Debug_Mode && context_Start == "/url?q=") {
+      if (false && context_Start == "/url?q=") {
         process.stdout.write("\rcontext.length: ");
       }
     }
@@ -398,7 +398,7 @@ function parse_HTML(
       ) {
       context += current_Char;
       //console.log("\r");console.log("\b\r12");console.log("\b\r345");
-      if (is_Debug_Mode) {
+      if (false) {
         //console.log("\r");
         //console.log(
         //  "\b\r", context.length);}//, "add to context.length");}//, context);}
@@ -408,7 +408,7 @@ function parse_HTML(
     if (
       context_Start == "/url?q=" &&
       (context_End == "" ||
-      context_End.length < 15 ||
+      context_End.length < 5 ||
       context_End != '&amp;')
       ) {
       context_End = (context_End + current_Char).slice(-5);
@@ -416,6 +416,7 @@ function parse_HTML(
         console.log(
           "add to context_End:", context_End,
           ".length:", context_End.length);}
+      //>>> post check <<<//
       if (current_Char == ';' && context_End == '&amp;') {
         // drop fist char from the same iteration as / when context_Start complete
         context = context.slice(1, -5);
@@ -423,11 +424,75 @@ function parse_HTML(
       }
     }
 
-    if (context_End == '&amp;') {
+    if (
+      context_End == "&amp;" &&
+      (thumbnail_Start == "" ||
+      thumbnail_Start.length < 5 ||
+      thumbnail_Start != 'src="')
+      ) {
+      thumbnail_Start = (thumbnail_Start + current_Char).slice(-5);
+    }
+    if (
+      thumbnail_Start == 'src="' &&
+      thumbnail_End != '"'
+    ) {
+
+      if (current_Char == '"' && thumbnail != "") {
+        thumbnail_End = current_Char;//'"';
+        if (is_Debug_Mode) { console.log("thumbnail extracted:", thumbnail);}
+      } else {
+        thumbnail += current_Char;
+      }
+    }
+
+    if (
+      thumbnail_End == '"' &&
+      (snippet_Start == "" ||
+      snippet_Start.length < 4 ||
+      snippet_Start != '<br>')
+      ) {
+      snippet_Start = (snippet_Start + current_Char).slice(-4);
+      //>>> guard / margin / delimiter / skip char flag <<<//
+      if (snippet_Start == '<br>') {
+        if (is_Debug_Mode) { console.log("snippet_Start completed:", snippet_Start);}
+        current_Char = undefined;
+      }
+    }
+    if (
+      current_Char &&
+      snippet_Start == '<br>' &&
+      snippet_Tag != '<br>'
+      //snippet_End != '<br>'
+    ) {
+
+      if (current_Char == '<') {
+        // TODO handle case <snippet_Start><not br tag>
+        snippet_Tag = current_Char;//'"';
+      } else if (current_Char == '>' && snippet_Tag != "") {
+        snippet_Tag += current_Char;
+        //>>> post check <<<//
+        if (snippet_Tag == '<br>') {
+          //snippet = context.slice(1, -4);
+          if (is_Debug_Mode) { console.log("snippet extracted:", snippet);}
+        }
+      } else if (
+        snippet_Tag == "" ||
+        (snippet_Tag.slice(-1) == '>' &&
+        snippet_Tag != "<br>")
+      ) {
+      //} else {
+        snippet += current_Char;
+      }
+    }
+
+    if (snippet_Tag == '<br>') {
 
       extracted_Tags
         .push(
-          context
+          {"context": context
+          ,"thumbnail": thumbnail
+          ,"snippet": snippet
+          }
         )
       ;
       if (is_Debug_Mode) {console.log("push to extracted_Tags.length:", extracted_Tags.length);}
