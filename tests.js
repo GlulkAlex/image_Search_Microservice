@@ -84,29 +84,6 @@ var test_1_0 = function(description){
     console.log(description);
 
     // TODO extract it from GET ["url", "snippet", "context", "thumbnail"]
-    // TODO create custom parser function
-    // TODO parser must retrieve tags (start/end) for DIV
-    // TODO parser must retrieve tag's attribute ("class")
-    // TODO parser must retrieve tag's content (.innerHTML)
-    // input: data stream / chunks
-    // stream processing => ? many accumulators ?
-    // output: js object / key => value dictionary
-
-    // https://www.google.ru/search?q=cute+owl&tbm=isch <- term = "cute+owl"
-    //<div class="rg_meta">
-    //{"cl":6,"id":"JJ6AX2fz8h4wLM:",
-    //"isu":"wallpaperswide.com","itg":false,"ity":"jpg",
-    //"oh":720, <- image height
-    //"ou":"http://wallpaperswide.com/download/cute_owl-wallpaper-1152x720.jpg", <- "url"
-    //"ow":1152, <- image width
-    //"pt":"Cute Owl HD desktop wallpaper : Widescreen : High Definition ...", <- "snippet"
-    //"rid":"2kOGT5u3dPuyQM",
-    //"ru":"http://wallpaperswide.com/cute_owl-wallpapers.html", <- "context"
-    //"s":"Wide 16:10","th":177,
-    //"tu":"https://encrypted-tbn0.gstatic.com/images?q\u003dtbn:ANd9GcRmavtLjp8djM6VjoHB8xr8WOVp8rlsO1Puk4gClrBTZkHR99U8",
-    // <- "thumbnail"
-    //"tw":284}
-    //</div>
     var results = [];
     var result;
     var getter = require('http');
@@ -288,6 +265,38 @@ var test_1_2 = function(description){
     var results = [];
     var result;
     var getter = require('https');
+    const fs = require('fs');
+    const StringDecoder = require('string_decoder').StringDecoder;
+    var utf8_Decoder = new StringDecoder('utf8');
+    //Error: Unknown encoding: windows-1251
+    //var windows_1251_Decoder = new StringDecoder('windows-1251');
+    var options = {
+      // protocol: Protocol to use. Defaults to 'http:'.
+      // Error: Protocol "http:" not supported. Expected "https:".
+      //"protocol": 'http:'
+      //"protocol": 'https:'
+      "hostname": "www.google.ru"//'www.google.com'
+      //,"port": 80
+      // path: Request path.
+      // Defaults to '/'.
+      // Should include query string if any. E.G. '/index.html?page=12'.
+      // An exception is thrown when the request path contains illegal characters.
+      // Currently, only spaces are rejected but that may change in the future.
+      ,"path": "/search?q=fox&tbm=isch&site=imghp&ie=utf-8&hl=en&language=en"
+      // method: A string specifying the HTTP request method.
+      // Defaults to 'GET'.
+      //,"method": 'GET'
+      ,"headers": {
+        //'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'text/html; charset=UTF-8'
+        //,'Content-Length': postData.length
+        //Accept-Charset: iso-8859-5, unicode-1-1;q=0.8
+        ,"Accept-Charset": "UTF-8"
+        //,"Accept-Charset": "utf-8"
+        //Accept-Language: da, en-gb;q=0.8, en;q=0.7
+        ,"Accept-Language": "en"
+      }
+    };
     //var express = require('express');
     //var app = express();
 
@@ -315,10 +324,12 @@ var test_1_2 = function(description){
           return result;
         }
       */
+      //response.setHeader('Content-Type', 'text/html');
       getter
         .get(
-          url,
-          (response) => {
+          url
+          //options
+          ,(response) => {
             var content_Type;
             var extracted_Tags = [];
             var result_Obj = {};
@@ -332,6 +343,7 @@ var test_1_2 = function(description){
             //'<div class="rg_meta">'
             //<div class=gbm <- WTF ? where are "" or '' ?
             var div_Tag_Meta_Chunk = "";
+            var encoding = 'utf8';
 
             console.log("Got response:", response.statusCode);
 
@@ -341,16 +353,27 @@ var test_1_2 = function(description){
             } else {
               content_Type = response.headers['content-type'];
             }
+            if (content_Type.split("charset=").length > 1) {
+              encoding = content_Type.split("charset=")[1];
+            }
             content_Type = content_Type.split(";")[0];
 
             console.log("content_Type:", content_Type);
             console.log("headers: ", response.headers);
+            console.log("encoding: ", encoding);
+            console.log("encoding: ", Buffer.isEncoding(encoding));
+            console.log("encoding windows-1251: ", Buffer.isEncoding("windows-1251"));
+            console.log("encoding 1251: ", Buffer.isEncoding("1251"));
+            console.log("encoding utf8: ", Buffer.isEncoding("utf8"));
 
             //readable
             //response.resume();
             // `explicitly` convert to `Strings`
             // rather than standard `Buffer` `objects`
-            response.setEncoding('utf8');
+            //response.setEncoding('utf8');
+            // Error: Unknown encoding: windows-1251
+            //response.setEncoding('windows-1251');
+            //'content-type': 'text/html; charset=windows-1251'
             response
               // for big page => only 1st chunk will be returned
               .on(
@@ -401,10 +424,44 @@ var test_1_2 = function(description){
               .once(
                 'end',
                 () => {
+                  /*
+                  fs.appendFile(file, data[, options], callback)
+                    file <String> | <Number> filename or file descriptor
+                    data <String> | <Buffer>
+                    options <Object> | <String>
+                      encoding <String> | <Null> default = 'utf8'
+                      mode <Number> default = 0o666
+                        ? mode sets the file mode (permission and sticky bits),
+                        but only if the file was created.
+                        It defaults to 0666,
+                        readable and writable.
+                      flag <String> default = 'a'
+                        ? 'a' - Open file for appending.
+                        The file is created if it does not exist.
+                        'w+' - Open file for reading and writing.
+                        The file is created (if it does not exist) or
+                        truncated (if it exists). <- shorten (something) by cutting off the top or the end.
+                      callback <Function>
+                        ? The callback gets two arguments (err, fd <- file descriptor)
+
+                  On Linux,
+                  positional writes don't work
+                  when the file is opened in append mode.
+                  The kernel ignores the position argument and
+                  always appends the data to the end of the file.
+                  */
+                  fs
+                    .appendFile('get_Response.html'
+                      ,page_Content
+                      ,{"flag" : 'w+'}
+                      ,(err) => {
+                        if (err) {throw err;}
+                        console.log('The page_Content was appended to file!');
+                  });
                   console.log("extracted_Tags.length: ", extracted_Tags.length);
                   console.log("extracted_Tags: ", extracted_Tags);
-                  console.log("last_Data_Chunk: ", last_Data_Chunk);
-                  console.log("div_Tag_Meta_Chunk: ", div_Tag_Meta_Chunk);
+                  //console.log("last_Data_Chunk: ", last_Data_Chunk);
+                  //console.log("div_Tag_Meta_Chunk: ", div_Tag_Meta_Chunk);
                   console.log("page_Content: ");
                   //console.log(page_Content.slice(-500));
                   console.log("page_Content.length:", page_Content.length);
@@ -412,7 +469,7 @@ var test_1_2 = function(description){
                   //console.log(page_Content.toString('utf8', 55000, 57500));
                   //'content-type': 'text/html; charset=windows-1251',
                   //assert(content_Type == expected_Result);
-                  assert.equal(extracted_Tags.length, expected_Result);
+                  //assert.equal(extracted_Tags.length, expected_Result);
                   //assert.deepEqual(results, expected_Results);
                   //next();
 
@@ -456,15 +513,19 @@ without the "espv=1" parameter are not.
 //{google:sourceId}
 //{google:instantExtendedEnabledParameter}
 //{google:contextualSearchVersion}ie={inputEncoding}"
-("https://www.google.ru/search?q=fox&espvd=1&tbm=isch&site=imghp", 3)
-//("https://www.google.ru/search?q=wise+dig&espv=2&tbs=isz:m,ic:gray,itp:lineart&tbm=isch", 3)
-//("https://www.google.ru/search?q=wise+dig&espvd=1&tbs=isz:m,ic:gray,itp:lineart&tbm=isch", 3)
-//("https://www.google.ru/search?q=wise+owl&espv=2&source=lnms&tbm=isch", 3)
-//("https://www.google.ru/search?q=wise+owl&newwindow=1&espv=2&biw=1280&bih=663&source=lnms&tbm=isch", 3)
+// from Advanced Image Search:
+//https://www.google.ru/search?
+//as_st=y <- Advanced Image Search ? state ? yes | on
+//&tbm=isch <- specified Image Search ? tab ?
+//&hl=en <- this parameter changes content-type charset
+//&as_q=pink+mouse <- Advanced Search query term
+//&as_epq=&as_oq=&as_eq=&cr=&as_sitesearch=
+//&safe=images&tbs=isz:m,ic:color,ift:png <- image size, color, file type
+// changes from 'text/html; charset=windows-1251' to 'content-type': 'text/html; charset=ISO-8859-1'
+//("https://www.google.ru/search?q=mice&tbm=isch&hl=en&start=20", 3)
+("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&start=30", 3)
 // 302 Moved -> redirect to .ru
 //("https://www.google.com/search?site=imghp&tbm=isch&source=hp&q=fox&oq=fox", 3)
-//("https://www.google.com/search?q=cute+owl&tbm=isch", 3)
-//("https://www.google.ru/search?q=cute+owl&tbm=isch#newwindow=1&tbm=isch&q=cute+owl", 3)
 ;
 
 /* somehow it works */

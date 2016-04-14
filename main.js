@@ -1,5 +1,4 @@
 "use strict";
-// TODO create an alternative start file: main.js using express
 /*
 .env
 MONGO_URI=mongodb://localhost:27017/clementinejs
