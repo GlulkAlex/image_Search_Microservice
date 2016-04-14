@@ -39,6 +39,10 @@ function pad_With(
 
 // TODO custom parser function must:
 // TODO - extract from html (body) ["url", "snippet", "context", "thumbnail"]
+// "url": <a href="/url?q=http://weknowyourdreamz.com/fox.html&amp; ... "
+// after "/url?q=" and before "&amp;" | '"'
+// "thumbnail": <img height="94" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:
+// <cite title="weknowyourdre ... "
 // TODO - retrieve tags (start/end) for DIV
 // TODO - retrieve tag's attribute ("class")
 // TODO - retrieve tag's content (.innerHTML)

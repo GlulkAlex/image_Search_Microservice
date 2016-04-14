@@ -328,6 +328,10 @@ var test_1_2 = function(description){
             var page_Content = new Buffer("");
             var total_Length = page_Content.length;
             var data_Chunk;// = new Buffer("");
+            var has_DIV_Tag_Meta = false;
+            //'<div class="rg_meta">'
+            //<div class=gbm <- WTF ? where are "" or '' ?
+            var div_Tag_Meta_Chunk = "";
 
             console.log("Got response:", response.statusCode);
 
@@ -356,6 +360,18 @@ var test_1_2 = function(description){
                   // row data Buffer
                   //console.log("data:", data);
                   //console.log("typeof(data): ", typeof(data), "data.length: ", data.length);
+                  if (has_DIV_Tag_Meta) {} else {
+                    // TODO it seems like page data & page view is not the same
+                    // some client side magic goes here
+                    //if (data.indexOf('https://encrypted-tbn3.gstatic.com') == -1) {
+                    //if (data.indexOf('><a href="/url?q=') == -1) {
+                    if (data.indexOf('<cite title=') == -1) {
+                    //if (data.indexOf('Owl Logo Design - Lo') == -1) {
+                    } else {
+                      has_DIV_Tag_Meta = true;
+                      div_Tag_Meta_Chunk = data;
+                    }
+                  }
                   if (extracted_Tags.length < expected_Result) {
                     //console.log("extracting ...");
                     console.log("extracting ... typeof(data): ", typeof(data), "data.length: ", data.length);
@@ -365,7 +381,7 @@ var test_1_2 = function(description){
                         ,extracted_Tags//: obj | dictionary
                         // it must change over time
                         ,parser_State
-                        ,is_Debug_Mode
+                        //,is_Debug_Mode
                     );
 
                     extracted_Tags = result_Obj.extracted_Tags;
@@ -388,11 +404,12 @@ var test_1_2 = function(description){
                   console.log("extracted_Tags.length: ", extracted_Tags.length);
                   console.log("extracted_Tags: ", extracted_Tags);
                   console.log("last_Data_Chunk: ", last_Data_Chunk);
+                  console.log("div_Tag_Meta_Chunk: ", div_Tag_Meta_Chunk);
                   console.log("page_Content: ");
                   //console.log(page_Content.slice(-500));
                   console.log("page_Content.length:", page_Content.length);
                   // buf.toString('utf8',0,5);
-                  console.log(page_Content.toString('utf8', 55000, 57500));
+                  //console.log(page_Content.toString('utf8', 55000, 57500));
                   //'content-type': 'text/html; charset=windows-1251',
                   //assert(content_Type == expected_Result);
                   assert.equal(extracted_Tags.length, expected_Result);
@@ -413,7 +430,41 @@ var test_1_2 = function(description){
     );
   };
 }("test 1.1: must extract content of DIV with specific class, from response from remote server")
-("https://www.google.ru/search?q=cute+owl&tbm=isch", 3)
+//("https://www.google.ru/search?q=cute+owl&tbm=isch", 3)
+/*
+the Chrome Instant feature
+---
+Instant Extended allows
+Instant URLs to
+match more template fields
+of the default search engine, with restrictions.
+So, in the extended mode,
+"https://www.google.com/?espv=1" and
+"https://www.google.com/search?espv=1&q=foo" are also Instant URLs,
+whereas
+the corresponding URLs
+without the "espv=1" parameter are not.
+*/
+//"search_url":
+//"{google:baseURL}search?q={searchTerms}
+//&{google:RLZ}
+//{google:originalQueryForSuggestion}
+//{google:assistedQueryStats}
+//{google:searchFieldtrialParameter}
+//{google:iOSSearchLanguage}
+//{google:searchClient}
+//{google:sourceId}
+//{google:instantExtendedEnabledParameter}
+//{google:contextualSearchVersion}ie={inputEncoding}"
+("https://www.google.ru/search?q=fox&espvd=1&tbm=isch&site=imghp", 3)
+//("https://www.google.ru/search?q=wise+dig&espv=2&tbs=isz:m,ic:gray,itp:lineart&tbm=isch", 3)
+//("https://www.google.ru/search?q=wise+dig&espvd=1&tbs=isz:m,ic:gray,itp:lineart&tbm=isch", 3)
+//("https://www.google.ru/search?q=wise+owl&espv=2&source=lnms&tbm=isch", 3)
+//("https://www.google.ru/search?q=wise+owl&newwindow=1&espv=2&biw=1280&bih=663&source=lnms&tbm=isch", 3)
+// 302 Moved -> redirect to .ru
+//("https://www.google.com/search?site=imghp&tbm=isch&source=hp&q=fox&oq=fox", 3)
+//("https://www.google.com/search?q=cute+owl&tbm=isch", 3)
+//("https://www.google.ru/search?q=cute+owl&tbm=isch#newwindow=1&tbm=isch&q=cute+owl", 3)
 ;
 
 /* somehow it works */
