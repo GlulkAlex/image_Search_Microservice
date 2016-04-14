@@ -265,11 +265,11 @@ var test_1_2 = function(description){
     var results = [];
     var result;
     var getter = require('https');
-    const fs = require('fs');
-    const StringDecoder = require('string_decoder').StringDecoder;
-    var utf8_Decoder = new StringDecoder('utf8');
+    //const fs = require('fs');
+    //const StringDecoder = require('string_decoder').StringDecoder;
+    //var utf8_Decoder = new StringDecoder('utf8');
     //Error: Unknown encoding: windows-1251
-    //var windows_1251_Decoder = new StringDecoder('windows-1251');
+    ///var windows_1251_Decoder = new StringDecoder('windows-1251');
     var options = {
       // protocol: Protocol to use. Defaults to 'http:'.
       // Error: Protocol "http:" not supported. Expected "https:".
@@ -362,15 +362,15 @@ var test_1_2 = function(description){
             console.log("headers: ", response.headers);
             console.log("encoding: ", encoding);
             console.log("encoding: ", Buffer.isEncoding(encoding));
-            console.log("encoding windows-1251: ", Buffer.isEncoding("windows-1251"));
-            console.log("encoding 1251: ", Buffer.isEncoding("1251"));
+            //console.log("encoding windows-1251: ", Buffer.isEncoding("windows-1251"));
+            //console.log("encoding 1251: ", Buffer.isEncoding("1251"));
             console.log("encoding utf8: ", Buffer.isEncoding("utf8"));
 
             //readable
             //response.resume();
             // `explicitly` convert to `Strings`
             // rather than standard `Buffer` `objects`
-            //response.setEncoding('utf8');
+            response.setEncoding('utf8');
             // Error: Unknown encoding: windows-1251
             //response.setEncoding('windows-1251');
             //'content-type': 'text/html; charset=windows-1251'
@@ -383,6 +383,7 @@ var test_1_2 = function(description){
                   // row data Buffer
                   //console.log("data:", data);
                   //console.log("typeof(data): ", typeof(data), "data.length: ", data.length);
+                  /*
                   if (has_DIV_Tag_Meta) {} else {
                     // DOne it seems like page data & page view is not the same
                     // -> can not fix that
@@ -396,6 +397,7 @@ var test_1_2 = function(description){
                       div_Tag_Meta_Chunk = data;
                     }
                   }
+                  */
                   if (extracted_Tags.length < expected_Result) {
                     //console.log("extracting ...");
                     console.log("extracting ... typeof(data): ", typeof(data), "data.length: ", data.length);
@@ -405,7 +407,7 @@ var test_1_2 = function(description){
                         ,extracted_Tags//: obj | dictionary
                         // it must change over time
                         ,parser_State
-                        //,is_Debug_Mode
+                        ,is_Debug_Mode
                     );
 
                     extracted_Tags = result_Obj.extracted_Tags;
@@ -413,8 +415,8 @@ var test_1_2 = function(description){
                   }
                   last_Data_Chunk = data;
                   //page_Content += data;
-                  data_Chunk = Buffer.from(data);
-                  page_Content = Buffer.concat([page_Content, data_Chunk], page_Content.length + data_Chunk.length);
+                  //data_Chunk = Buffer.from(data);
+                  //page_Content = Buffer.concat([page_Content, data_Chunk], page_Content.length + data_Chunk.length);
                 }
             );
 
@@ -473,7 +475,7 @@ var test_1_2 = function(description){
                   //console.log(page_Content.toString('utf8', 55000, 57500));
                   //'content-type': 'text/html; charset=windows-1251',
                   //assert(content_Type == expected_Result);
-                  //assert.equal(extracted_Tags.length, expected_Result);
+                  assert.equal(extracted_Tags.length, expected_Result);
                   //assert.deepEqual(results, expected_Results);
                   //next();
 
@@ -527,7 +529,7 @@ without the "espv=1" parameter are not.
 //&safe=images&tbs=isz:m,ic:color,ift:png <- image size, color, file type
 // changes from 'text/html; charset=windows-1251' to 'content-type': 'text/html; charset=ISO-8859-1'
 //("https://www.google.ru/search?q=mice&tbm=isch&hl=en&start=20", 3)
-("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&start=30", 3)
+("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&start=30", 20)
 // 302 Moved -> redirect to .ru
 //("https://www.google.com/search?site=imghp&tbm=isch&source=hp&q=fox&oq=fox", 3)
 ;

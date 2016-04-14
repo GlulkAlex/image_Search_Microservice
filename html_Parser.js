@@ -327,11 +327,6 @@ function parse_HTML(
   var chunk_Length = data_Chunk.length;
   var current_Char = "";
   //>>> parser's state <<<///
-  //var open_Tag_Start_Slide_Window = "";//"____"; // | "<div".length == 4
-  //var tag_Attribute_Slide_Window = "";//"_______________"; // | 'class="rg_meta"'.length == 15
-  //var open_Tag_End_Slide_Window = "";//"_"; // | ">".length == 1
-  //var tag_Content = "";// tag_Content - close_Tag_Slide_Window -> drop 5 left chars | "".slice(0, -5)
-  //var close_Tag_Slide_Window = "";//"_____"; // | "</div".length == 5 | "</".length == 2
   var context_Start = "";// "/url?q="
   var context = "";// "http://www.catersnews.com/ ..."
   var context_End = "";// "&amp;"
@@ -353,18 +348,6 @@ function parse_HTML(
     extracted_Tags = [];//{};
     if (is_Debug_Mode) {console.log("extracted_Tags is empty:", extracted_Tags);}
   }
-  /*if (current_Tag) {} else {
-    current_Tag = {
-      "open_Tag": ""
-      ,"tag_Attribute_Name": ""
-      ,"tag_Attribute_Value": ""
-      ,"tag_Content": ""
-      ,"close_Tag": ""
-    };
-  }*/
-  /*if (incomplete_Data) {} else {
-    incomplete_Data = "";
-  }*/
   //*** defaults end ***//
 
   //*** initialization ***//
@@ -372,18 +355,20 @@ function parse_HTML(
   if (is_Debug_Mode) {console.log("parser_State:", parser_State);}
   if (parser_State) { // is not null | undefined & is an proper object
     //>>> set <<<//
-    open_Tag_Start_Slide_Window = parser_State.open_Tag_Start;
-    tag_Attribute_Slide_Window = parser_State.tag_Attribute;
-    open_Tag_End_Slide_Window = parser_State.open_Tag_End;
-    tag_Content = parser_State.tag_Content;
-    close_Tag_Slide_Window = parser_State.close_Tag;
+    context_Start = parser_State.context_Start;
+    context = parser_State.context;
+    context_End = parser_State.context_End;
+    thumbnail_Start = parser_State.thumbnail_Start;
+    thumbnail = parser_State.thumbnail;
+    thumbnail_End = parser_State.thumbnail_End;
+    snippet_Start = parser_State.snippet_Start;
+    snippet = parser_State.snippet;
+    snippet_Tag = parser_State.snippet_Tag;
   } else {
   }
-  if (is_Debug_Mode) {console.log("open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window);}
-  if (is_Debug_Mode) {console.log("tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window);}
-  if (is_Debug_Mode) {console.log("open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window);}
-  if (is_Debug_Mode) {console.log("tag_Content.length:", tag_Content.length);}
-  if (is_Debug_Mode) {console.log("close_Tag_Slide_Window:", close_Tag_Slide_Window);}
+  if (is_Debug_Mode) {console.log("context:", context);}
+  if (is_Debug_Mode) {console.log("thumbnail:", thumbnail);}
+  if (is_Debug_Mode) {console.log("snippet:", snippet);}
   //*** initialization end ***//
 
   for (;i < chunk_Length;i++) {
@@ -391,109 +376,94 @@ function parse_HTML(
     current_Char = data_Chunk[i];
 
     if (
-      open_Tag_Start_Slide_Window == "" ||
-      open_Tag_Start_Slide_Window.length < 4 ||
-      open_Tag_Start_Slide_Window != "<div"
+      context_Start == "" ||
+      context_Start.length < 7 ||
+      context_Start != "/url?q="
       ) {
-      open_Tag_Start_Slide_Window = (open_Tag_Start_Slide_Window + current_Char).slice(-4);
-      if (is_Debug_Mode) {
-        console.log(
-          "add to open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window,
-          ".length:", open_Tag_Start_Slide_Window.length);}
-    }
-    if (
-      tag_Attribute_Slide_Window == "" ||
-      tag_Attribute_Slide_Window.length < 15 ||
-      tag_Attribute_Slide_Window != 'class="rg_meta"'
-      ) {
-      tag_Attribute_Slide_Window = (tag_Attribute_Slide_Window + current_Char).slice(-15);
+      context_Start = (context_Start + current_Char).slice(-7);
       if (false) {
         console.log(
-          "add to tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window,
-          ".length:", tag_Attribute_Slide_Window.length);}
+          "add to context_Start:", context_Start,
+          ".length:", context_Start.length);}
+      if (is_Debug_Mode && context_Start == "/url?q=") {
+        process.stdout.write("\rcontext.length: ");
+      }
     }
     if (
-      open_Tag_Start_Slide_Window == "<div" &&
-      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
-      open_Tag_End_Slide_Window != '>'
+      (context_Start == "/url?q=") &&
+      (context == "" ||
+      //context.length < 15 ||
+      //context != 'class="rg_meta"'
+      context_End != '&amp;')
       ) {
-      open_Tag_End_Slide_Window = current_Char;
+      context += current_Char;
+      //console.log("\r");console.log("\b\r12");console.log("\b\r345");
       if (is_Debug_Mode) {
-        console.log(
-          "add to open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window,
-          ".length:", open_Tag_End_Slide_Window.length);}
+        //console.log("\r");
+        //console.log(
+        //  "\b\r", context.length);}//, "add to context.length");}//, context);}
+        //process.stdout.write("\rcontext.length: " + context.length);}
+        process.stdout.write(context.length + ", ");}
     }
-    /*
     if (
-      (open_Tag_Start_Slide_Window == "<div" &&
-      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
-      open_Tag_End_Slide_Window == '>') &&
-      (close_Tag_Slide_Window == "" ||
-      close_Tag_Slide_Window.length < 5 ||
-      close_Tag_Slide_Window != "</div")
-    ) {
-      tag_Content += current_Char;
-    }
-    */
-    if (
-      (open_Tag_Start_Slide_Window == "<div" &&
-      tag_Attribute_Slide_Window == 'class="rg_meta"' &&
-      open_Tag_End_Slide_Window == '>') &&
-      (close_Tag_Slide_Window == "" ||
-      close_Tag_Slide_Window.length < 5 ||
-      close_Tag_Slide_Window != "</div")
-    ) {
-      tag_Content += current_Char;
-      close_Tag_Slide_Window = (close_Tag_Slide_Window + current_Char).slice(-5);
-      //if (is_Debug_Mode) {console.log("add to tag_Content.length:", tag_Content.length);}
-      if (is_Debug_Mode) {
+      context_Start == "/url?q=" &&
+      (context_End == "" ||
+      context_End.length < 15 ||
+      context_End != '&amp;')
+      ) {
+      context_End = (context_End + current_Char).slice(-5);
+      if (false) {
         console.log(
-          "add to close_Tag_Slide_Window:", close_Tag_Slide_Window, ".length:", close_Tag_Slide_Window.length);}
+          "add to context_End:", context_End,
+          ".length:", context_End.length);}
+      if (current_Char == ';' && context_End == '&amp;') {
+        // drop fist char from the same iteration as / when context_Start complete
+        context = context.slice(1, -5);
+        if (is_Debug_Mode) { console.log("\ncontext extracted:", context);}
+      }
     }
 
-    if (close_Tag_Slide_Window == "</div") {
+    if (context_End == '&amp;') {
 
       extracted_Tags
         .push(
-          tag_Content.slice(1, -5)
+          context
         )
       ;
       if (is_Debug_Mode) {console.log("push to extracted_Tags.length:", extracted_Tags.length);}
       //>>> reset <<<//
-      open_Tag_Start_Slide_Window = "";
-      tag_Attribute_Slide_Window = "";
-      open_Tag_End_Slide_Window = "";
-      tag_Content = "";//tag_Content.slice(0, -5);
-      close_Tag_Slide_Window = "";
+      context_Start = "";
+      context = "";
+      context_End = "";
+      thumbnail_Start = "";
+      thumbnail = "";
+      thumbnail_End = "";
+      snippet_Start = "";
+      snippet = "";
+      snippet_Tag = "";
 
     } else {
     }
   }
-  //>>> reset <<<//
-  //TypeError: Cannot assign to read only property 'open_Tag_Start'
-  /*
-  parser_State.open_Tag_Start = open_Tag_Start_Slide_Window;
-  parser_State.tag_Attribute = tag_Attribute_Slide_Window;
-  parser_State.open_Tag_End = open_Tag_End_Slide_Window;
-  parser_State.tag_Content = tag_Content;
-  parser_State.close_Tag = close_Tag_Slide_Window;
-  */
+  //>>> result <<<//
   if (is_Debug_Mode) {console.log("return value:");}
-  if (is_Debug_Mode) {console.log("open_Tag_Start_Slide_Window:", open_Tag_Start_Slide_Window);}
-  if (is_Debug_Mode) {console.log("tag_Attribute_Slide_Window:", tag_Attribute_Slide_Window);}
-  if (is_Debug_Mode) {console.log("open_Tag_End_Slide_Window:", open_Tag_End_Slide_Window);}
-  if (is_Debug_Mode) {console.log("tag_Content.length:", tag_Content.length);}
-  if (is_Debug_Mode) {console.log("close_Tag_Slide_Window:", close_Tag_Slide_Window);}
+  if (is_Debug_Mode) {console.log("context:", context);}
+  if (is_Debug_Mode) {console.log("thumbnail:", thumbnail);}
+  if (is_Debug_Mode) {console.log("snippet:", snippet);}
   //return Promise
   //  .resolve(
   return {
         "extracted_Tags": extracted_Tags
         ,"parser_State": {
-          "open_Tag_Start": open_Tag_Start_Slide_Window
-          ,"tag_Attribute": tag_Attribute_Slide_Window
-          ,"open_Tag_End": open_Tag_End_Slide_Window
-          ,"tag_Content": tag_Content
-          ,"close_Tag": close_Tag_Slide_Window
+          "context_Start": context_Start
+          ,"context": context
+          ,"context_End": context_End
+          ,"thumbnail_Start": thumbnail_Start
+          ,"thumbnail": thumbnail
+          ,"thumbnail_End": thumbnail_End
+          ,"snippet_Start": snippet_Start
+          ,"snippet": snippet
+          ,"snippet_Tag": snippet_Tag
         }
       }
   //  )
