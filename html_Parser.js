@@ -431,8 +431,14 @@ function parse_HTML(
       thumbnail_Start != 'src="')
       ) {
       thumbnail_Start = (thumbnail_Start + current_Char).slice(-5);
+      //>>> guard / margin / delimiter / skip char flag <<<//
+      if (thumbnail_Start == 'src="') {
+        if (is_Debug_Mode) { console.log("thumbnail_Start completed:", thumbnail_Start);}
+        current_Char = undefined;
+      }
     }
     if (
+      current_Char &&
       thumbnail_Start == 'src="' &&
       thumbnail_End != '"'
     ) {
@@ -491,8 +497,9 @@ function parse_HTML(
         (snippet_Tag.slice(-1) == '>' &&
         snippet_Tag != "<br>")
       ) {
-      } else {
         snippet += current_Char;
+      } else {
+        snippet_Tag += current_Char;
       }
     }
 

@@ -68,7 +68,8 @@ const collection_Name = (
 //*** Node.js modules ***//
 //*** core modules ***//
 //const http = require('http');
-//const https = require('https');
+const https = require('https');
+//var getter = require('https');
 //const fs = require('fs');
 //const path = require('path');
 const url = require('url');
@@ -91,10 +92,8 @@ const mongo_Client = require('mongodb').MongoClient;
 //const mongo = require('mongodb').MongoClient;
 
 //*** application modules ***//
-//const short_Link_Gen = require('./short_link_generator.js');//.short_Link_Generator;
-//const host_Name_Validator = require('./host_Name_Validator.js');
 //const db_Helpers = require('./db_Helpers.js');
-//const response_Helpers = require('./response_Helpers.js');
+const html_Parser = require('./html_Parser.js');
 //*** application modules end ***//
 
 // redundant here, has no practical use
@@ -154,7 +153,14 @@ if (is_Debug_Mode) {
     "process.env:",
     JSON.stringify(
       process.env
-      ,['PORT', 'IS_DEBUG', 'DEBUG_MODE', 'MONGO_URI', 'MONGOLAB_URI', 'TEST_MONGODB']
+      ,[
+        'PORT',
+        'IS_DEBUG',
+        'DEBUG_MODE',
+        'MONGO_URI',
+        'MONGOLAB_URI',
+        'TEST_MONGODB'
+      ]
       // works as "pretty print"
       ,'\t'
     )
@@ -295,9 +301,11 @@ app
     var offset = 0;
     var json_Obj = {};
     var document_Obj = {};
+    var term = req.params.term;
+    var search_URL = "";
 
     document_Obj = {
-      "term": req.params.term//JSON.stringify(document_Obj)
+      "term": term//JSON.stringify(document_Obj)
       // NOTE
       // The BSON `timestamp` type is for internal MongoDB use.
       /*
@@ -320,7 +328,16 @@ app
         // UTC (Universal Time Coordinated) is the same as GMT (Greenwich Mean Time).
     };
     if (req.query.hasOwnProperty("offset")) {
-      offset = req.query.offset;
+      // "&start=30" -> "&start=offset"
+      // so it must be number -> int
+      //Number("H").toString() == 'NaN'
+      //Number("11").toString() == '11'
+      //parseInt("11", 10) == 11
+      offset = parseInt(req.query.offset, 10);
+      if (offset.toString() == 'NaN') {
+        offset = 0;
+      } else {
+      }
     }
 
     //>>> store search term <<<//
@@ -391,7 +408,109 @@ app
 
     //>>> GET images info / data from web <<<//
     // async block //
+    search_URL = "https://www.google.ru/search?q=" + term + "&tbm=isch&hl=en" + "&start=" + offset;
+    //getter
+    https
+      .get(
+        search_URL
+        //options
+        ,(response) => {
+          var content_Type;
+          var extracted_Tags = [];
+          var result_Obj = {};
+          var parser_State;
+          var encoding = 'utf8';
+
+          //response.statusMessage
+          if (is_Debug_Mode) {console.log("Got GET response.statusCode:", response.statusCode);}
+
+          //content_Type.split(";")[0]
+          if (response.hasOwnProperty("getHeader")) {
+            content_Type = response.getHeader('content-type');
+          } else {
+            content_Type = response.headers['content-type'];
+          }
+          if (content_Type.split("charset=").length > 1) {
+            encoding = content_Type.split("charset=")[1];
+          }
+          content_Type = content_Type.split(";")[0];
+
+          if (is_Debug_Mode) {console.log("content_Type:", content_Type);}
+          //if (is_Debug_Mode) {console.log("headers: ", response.headers);}
+          if (is_Debug_Mode) {console.log("encoding: ", encoding);}
+
+          //readable
+          //response.resume();
+          // `explicitly` convert to `Strings`
+          // rather than standard `Buffer` `objects`
+          response.setEncoding('utf8');
+          response
+            .on(
+              'data',
+              (data) => {
+                if (is_Debug_Mode) {
+                  console.log("extracting ... typeof(data): ", typeof(data), "data.length: ", data.length);}
+                result_Obj = html_Parser
+                  .parse_HTML(
+                    data//: str
+                    ,extracted_Tags//: obj | dictionary
+                    ,parser_State
+                    ,is_Debug_Mode
+                );
+
+                extracted_Tags = result_Obj.extracted_Tags;
+                parser_State = result_Obj.parser_State;
+              }
+          );
+
+          response
+            .once(
+              'end',
+              () => {
+                json_Obj = extracted_Tags;
+                //res.sendStatus(200); // <- and res.end() closes stream
+                res
+                  .status(200)
+                  .jsonp(json_Obj);
+
+                return extracted_Tags;
+              }
+            )
+          ;
+
+          response
+            .on('error',
+              (err) => {
+                if (is_Debug_Mode) {console.log("response.on('error')", err.message);}
+                json_Obj = {
+                  "error": err.message
+                  ,"status": response.statusMessage
+                  ,"message": "response.on('error') for GET: " + search_URL
+                };
+                res
+                  .status(404)
+                  .jsonp(json_Obj);
+          });
+
+        }
+      )
+      .on('error', (err) => {
+        if (is_Debug_Mode) {console.log("url getter error:", err.stack);}
+        json_Obj = {
+          "error": err.message
+          ,"status": "not OK"
+          ,"message": "error for GET: " + search_URL
+        };
+        res
+          // 404 Not Found
+          // 405 Method Not Allowed
+          // 500 Internal Server Error
+          .status(405)
+          .jsonp(json_Obj);
+      }
+    )
     // async block end //
+
     json_Obj = {
       "error": false//true//'message'
       ,"status": 200// OK
@@ -413,6 +532,7 @@ app
     res.set('x-timestamp', Date.now());
     //res.sendStatus(200);
     // equivalent to res.status(200).send('OK')
+    /*
     res
       // 202 Accepted
       // 203 Non-Authoritative Information
@@ -431,7 +551,7 @@ app
       //console.log(res.headersSent); // true
       .jsonp(json_Obj)
       //.json(json_Obj)
-    ;
+    ;*/
   }
 );
 // DONE fix that
