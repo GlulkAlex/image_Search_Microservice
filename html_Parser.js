@@ -282,16 +282,16 @@ function extract_Div_rg_meta_Content(
 //          Image result for mice
 //        ">
 //  </a>
-//  <br>
+//  <br> <- 1-st, snippet_Tag.size == 4
 //  <cite
 //    title="
 //      catersnews.com
 //    ">
 //    catersnews.com
 //  </cite>
-//  <br>    <<- snippet start after </cite>
+//  <br>    <<- snippet start after </cite> <- 2-nd, snippet_Tag.size == vary
 //    Adorable moment two tiny <b>mice</b>
-//  <br>    <<- snippet end
+//  <br>    <<- snippet end <- 3-rd, reset all state to default
 //  3000 × 2022 - 894k&nbsp;-&nbsp;jpg
 //</td>
 // helper
@@ -333,11 +333,11 @@ function parse_HTML(
   var thumbnail_Start = "";// 'src="'
   var thumbnail = "";// "https://encrypted-tbn1.gstatic.com/images?q=tbn:"
   var thumbnail_End = "";// '"'
-  var snippet_Start = "";// '<br>', next after </cite>
+  var snippet_Start = 0;//"";// '<br>', next after </cite> <- br_Counter = 2
   // TODO skip all in snippet "< ... >"
   var snippet = "";// "Adorable moment two tiny <b>mice</b>"
   var snippet_Tag = "";// "< ... >" <- [0] | .slice(0, 1) == "<" && .slice(-1) == ">"
-  var snippet_End = "";// snippet_Tag == '<br>'
+  var snippet_End = "";// snippet_Tag == '<br>' <- br_Counter = 3
 
   //*** defaults ***//
   if (is_Debug_Mode) {console.log("defaults:");}
@@ -447,29 +447,40 @@ function parse_HTML(
 
     if (
       thumbnail_End == '"' &&
-      (snippet_Start == "" ||
-      snippet_Start.length < 4 ||
-      snippet_Start != '<br>')
+      snippet_Start < 2
+      //(snippet_Start == 0 ||
+      //snippet_Start.length < 4 ||
+      //snippet_Start != 2)
       ) {
-      snippet_Start = (snippet_Start + current_Char).slice(-4);
+      snippet_Tag = (snippet_Tag + current_Char).slice(-4);
       //>>> guard / margin / delimiter / skip char flag <<<//
-      if (snippet_Start == '<br>') {
-        if (is_Debug_Mode) { console.log("snippet_Start completed:", snippet_Start);}
+      if (snippet_Tag == '<br>') {
+        if (is_Debug_Mode) { console.log("snippet_Tag completed:", snippet_Tag);}
+        snippet_Start += 1;
+        //>>> reset <<<//
+        snippet_Tag = "";
         current_Char = undefined;
+
+        if (snippet_Start == 2) {
+          if (is_Debug_Mode) { console.log("snippet_Start completed:", snippet_Start);}
+        }
       }
     }
     if (
       current_Char &&
-      snippet_Start == '<br>' &&
+      snippet_Start == 2 &&
       snippet_Tag != '<br>'
       //snippet_End != '<br>'
     ) {
 
       if (current_Char == '<') {
+        // possible tag start
         // TODO handle case <snippet_Start><not br tag>
         snippet_Tag = current_Char;//'"';
       } else if (current_Char == '>' && snippet_Tag != "") {
+        // possible tag end
         snippet_Tag += current_Char;
+        if (is_Debug_Mode) { console.log("snippet_Tag completed:", snippet_Tag);}
         //>>> post check <<<//
         if (snippet_Tag == '<br>') {
           //snippet = context.slice(1, -4);
@@ -480,7 +491,7 @@ function parse_HTML(
         (snippet_Tag.slice(-1) == '>' &&
         snippet_Tag != "<br>")
       ) {
-      //} else {
+      } else {
         snippet += current_Char;
       }
     }
@@ -503,7 +514,7 @@ function parse_HTML(
       thumbnail_Start = "";
       thumbnail = "";
       thumbnail_End = "";
-      snippet_Start = "";
+      snippet_Start = 0;//"";
       snippet = "";
       snippet_Tag = "";
 

@@ -528,9 +528,10 @@ without the "espv=1" parameter are not.
 //&as_epq=&as_oq=&as_eq=&cr=&as_sitesearch=
 //&safe=images&tbs=isz:m,ic:color,ift:png <- image size, color, file type
 // changes from 'text/html; charset=windows-1251' to 'content-type': 'text/html; charset=ISO-8859-1'
-//("https://www.google.ru/search?q=mice&tbm=isch&hl=en&start=20", 3)
+("https://www.google.ru/search?q=mice&tbm=isch&hl=en&start=12", 2)
 // 20 results / records / images per page / request
-("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&start=30", 2)
+//("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&start=30", 2)
+//("https://www.google.ru/search?as_st=y&as_q=mice&tbm=isch&hl=en&as_sitesearch=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMouse", 1)
 // 302 Moved -> redirect to .ru
 //("https://www.google.com/search?site=imghp&tbm=isch&source=hp&q=fox&oq=fox", 3)
 ;
